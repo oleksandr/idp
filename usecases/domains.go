@@ -127,5 +127,6 @@ func domainRecordToEntity(record *dl.Domain) *entities.Domain {
 	d := entities.NewDomain(record.Name, record.Description)
 	d.ID = record.ID
 	d.Enabled = record.Enabled
+	d.UsersCount = record.UsersCount
 	return d
 }

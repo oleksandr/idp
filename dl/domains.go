@@ -11,6 +11,7 @@ import (
 
 // Domain DTO
 type Domain struct {
+	// Table attributes
 	PK          int64     `db:"domain_id"`
 	ID          string    `db:"object_id"`
 	Name        string    `db:"name"`
@@ -18,6 +19,9 @@ type Domain struct {
 	Enabled     bool      `db:"is_enabled"`
 	CreatedOn   time.Time `db:"created_on"`
 	UpdatedOn   time.Time `db:"updated_on"`
+
+	// Transient/calculated attribute
+	UsersCount int64 `db:"users_count"`
 }
 
 // SaveDomain updates or inserts a new domain
@@ -116,7 +120,11 @@ func CountDomainsByUser(db sqlx.Ext, id string) (int64, error) {
 
 // FindAllDomains returns a page of domain records
 func FindAllDomains(db sqlx.Ext, pager entities.Pager, sorter entities.Sorter) ([]*Domain, error) {
-	rows, err := db.Queryx(fmt.Sprintf("SELECT * FROM domain %v %v;", orderByClause(sorter), limitOffset(pager)))
+	q := fmt.Sprintf(`SELECT d.*, count(du.domain_id) AS users_count FROM domain AS d
+		LEFT JOIN domain_user AS du ON d.domain_id = du.domain_id
+		GROUP BY d.domain_id
+		%v %v;`, orderByClause(sorter, "d"), limitOffset(pager))
+	rows, err := db.Queryx(q)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	} else if err != nil {
@@ -138,12 +146,14 @@ func FindAllDomains(db sqlx.Ext, pager entities.Pager, sorter entities.Sorter) (
 
 // FindDomainsByUser returns a page of domain records filtered by a given user ID
 func FindDomainsByUser(db *sqlx.DB, userID string, pager entities.Pager, sorter entities.Sorter) ([]*Domain, error) {
-	q := fmt.Sprintf(`SELECT * FROM domain WHERE domain_id
-		IN (
+	q := fmt.Sprintf(`SELECT d.*, count(du.domain_id) AS users_count FROM domain AS d
+		LEFT JOIN domain_user AS du ON d.domain_id = du.domain_id
+		WHERE d.domain_id IN (
 			SELECT DISTINCT domain_id FROM domain_user WHERE user_id
 				IN (SELECT user_id FROM user WHERE object_id = ?)
 		)
-		%v %v;`, orderByClause(sorter), limitOffset(pager))
+		GROUP BY d.domain_id
+		%v %v;`, orderByClause(sorter, "d"), limitOffset(pager))
 	rows, err := db.Queryx(q, userID)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound

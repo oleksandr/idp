@@ -18,6 +18,9 @@ type User struct {
 	Enabled   bool      `db:"is_enabled"`
 	CreatedOn time.Time `db:"created_on"`
 	UpdatedOn time.Time `db:"updated_on"`
+
+	// Transient/calculated attribute
+	DomainsCount int64 `db:"domains_count"`
 }
 
 // SaveUser update or inserts a new user
@@ -122,7 +125,11 @@ func CountUsersByDomain(db sqlx.Ext, id string) (int64, error) {
 
 // FindAllUsers returns a page of user records
 func FindAllUsers(db *sqlx.DB, pager entities.Pager, sorter entities.Sorter) ([]*User, error) {
-	rows, err := db.Queryx(fmt.Sprintf("SELECT * FROM user %v %v;", orderByClause(sorter), limitOffset(pager)))
+	q := fmt.Sprintf(`SELECT u.*, count(du.user_id) AS domains_count FROM user AS u
+		LEFT JOIN domain_user AS du ON u.user_id = du.user_id
+		GROUP BY u.user_id
+		%v %v;`, orderByClause(sorter, "u"), limitOffset(pager))
+	rows, err := db.Queryx(q)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	} else if err != nil {
@@ -144,12 +151,14 @@ func FindAllUsers(db *sqlx.DB, pager entities.Pager, sorter entities.Sorter) ([]
 
 // FindUsersByDomain returns a page of user records filtered by a given domain ID
 func FindUsersByDomain(db *sqlx.DB, domainID string, pager entities.Pager, sorter entities.Sorter) ([]*User, error) {
-	q := fmt.Sprintf(`SELECT * FROM user WHERE user_id
-		IN (
+	q := fmt.Sprintf(`SELECT u.*, count(du.user_id) AS domains_count FROM user AS u
+		LEFT JOIN domain_user AS du ON u.user_id = du.user_id
+		WHERE u.user_id IN (
 			SELECT DISTINCT user_id FROM domain_user WHERE domain_id
 				IN (SELECT domain_id FROM domain WHERE object_id = ?)
 		)
-		%v %v;`, orderByClause(sorter), limitOffset(pager))
+		GROUP BY u.user_id
+		%v %v;`, orderByClause(sorter, ""), limitOffset(pager))
 	rows, err := db.Queryx(q, domainID)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound

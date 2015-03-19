@@ -16,6 +16,7 @@ type Domain struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Enabled     bool   `json:"enabled"`
+	UsersCount  int64  `json:"-"`
 }
 
 // NewDomain - a constructor for Domain entities

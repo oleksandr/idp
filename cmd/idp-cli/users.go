@@ -23,7 +23,7 @@ func listUsers(c *cli.Context) {
 
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 0, 8, 1, '\t', 0)
-	fmt.Fprintln(w, "ID\tName\tEnabled")
+	fmt.Fprintln(w, "ID\tName\tEnabled\tDomains")
 
 	for {
 		if c.String("domain") != "" {
@@ -33,7 +33,7 @@ func listUsers(c *cli.Context) {
 		}
 		assertError(err)
 		for _, d := range collection.Users {
-			fmt.Fprintf(w, "%v\t%v\t%v\n", d.ID, d.Name, d.Enabled)
+			fmt.Fprintf(w, "%v\t%v\t%v\t%v\n", d.ID, d.Name, d.Enabled, d.DomainsCount)
 		}
 		w.Flush()
 		if !paginator.HasNextPage {

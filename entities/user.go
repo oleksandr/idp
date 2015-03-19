@@ -12,10 +12,17 @@ import (
 // User entities represent users.
 //
 type User struct {
-	ID       string `json:"user_id"`
-	Name     string `json:"name"`
-	Password string `json:"-"`
-	Enabled  bool   `json:"enabled"`
+	ID           string `json:"user_id"`
+	Name         string `json:"name"`
+	Password     string `json:"-"`
+	Enabled      bool   `json:"enabled"`
+	DomainsCount int64  `json:"-"`
+}
+
+// DomainUser extends basic User structure with information about his/hers domains
+type DomainUser struct {
+	User
+	Domains []Domain `json:"domains"`
 }
 
 // NewUser - a constructor for `User`

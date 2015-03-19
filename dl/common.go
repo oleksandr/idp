@@ -59,13 +59,17 @@ func ExecuteTransactionally(db *sqlx.DB, wrappedFunc func(ext sqlx.Ext) error) e
 }
 
 // Takes a Sorter and constructs a "ORDER BY" clause if required
-func orderByClause(sorter entities.Sorter) string {
+func orderByClause(sorter entities.Sorter, alias string) string {
 	clause := ""
+	prefix := ""
+	if alias != "" {
+		prefix = fmt.Sprintf("%v.", alias)
+	}
 	if sorter.Field != "" {
 		if sorter.Asc {
-			clause = fmt.Sprintf("ORDER BY %v ASC", sorter.Field)
+			clause = fmt.Sprintf("ORDER BY %v%v ASC", prefix, sorter.Field)
 		} else {
-			clause = fmt.Sprintf("ORDER BY %v ASC", sorter.Field)
+			clause = fmt.Sprintf("ORDER BY %v%v ASC", prefix, sorter.Field)
 		}
 	}
 	return clause

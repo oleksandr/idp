@@ -122,12 +122,8 @@ func (inter *UserInteractorImpl) List(pager entities.Pager, sorter entities.Sort
 		Users:     []*entities.User{},
 		Paginator: pager.CreatePaginator(len(records), total),
 	}
-	var u *entities.User
-	for _, dto := range records {
-		u = entities.NewUser(dto.Name)
-		u.ID = dto.ID
-		u.Enabled = dto.Enabled
-		c.Users = append(c.Users, u)
+	for _, r := range records {
+		c.Users = append(c.Users, userRecordToEntity(r))
 	}
 	return c, nil
 }
@@ -146,12 +142,17 @@ func (inter *UserInteractorImpl) ListByDomain(domainID string, pager entities.Pa
 		Users:     []*entities.User{},
 		Paginator: pager.CreatePaginator(len(records), total),
 	}
-	var u *entities.User
-	for _, dto := range records {
-		u = entities.NewUser(dto.Name)
-		u.ID = dto.ID
-		u.Enabled = dto.Enabled
-		c.Users = append(c.Users, u)
+	for _, r := range records {
+		c.Users = append(c.Users, userRecordToEntity(r))
 	}
 	return c, nil
+}
+
+func userRecordToEntity(record *dl.User) *entities.User {
+	u := entities.NewUser(record.Name)
+	u.ID = record.ID
+	u.Password = record.Password
+	u.Enabled = record.Enabled
+	u.DomainsCount = record.DomainsCount
+	return u
 }
