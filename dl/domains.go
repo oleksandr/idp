@@ -20,12 +20,6 @@ type Domain struct {
 	UpdatedOn   time.Time `db:"updated_on"`
 }
 
-// DomainUser DTO
-type DomainUser struct {
-	DomainPK int64 `db:"domain_id"`
-	UserPK   int64 `db:"user_id"`
-}
-
 // SaveDomain updates or inserts a new domain
 func SaveDomain(db sqlx.Ext, d Domain) (*Domain, error) {
 	var (
@@ -78,7 +72,7 @@ func DeleteDomain(db sqlx.Ext, id string) error {
 	} else if err != nil {
 		return err
 	}
-	err = ExecuteTransactionally(db, func(ext sqlx.Ext) error {
+	err = ExecuteTransactionally(db.(*sqlx.DB), func(ext sqlx.Ext) error {
 		r, err := ext.Exec("DELETE FROM domain_user WHERE domain_id = ?;", pk)
 		if err != nil {
 			return err
@@ -109,6 +103,17 @@ func CountDomains(db sqlx.Ext) (int64, error) {
 	return count, nil
 }
 
+// CountDomainsByUser returns a total count of domain records belonging to a given user
+func CountDomainsByUser(db sqlx.Ext, id string) (int64, error) {
+	var count int64
+	err := db.QueryRowx(`SELECT count(*) FROM domain_user WHERE user_id IN
+		(SELECT user_id FROM user WHERE object_id = ?);`, id).Scan(&count)
+	if err != nil {
+		return -1, err
+	}
+	return count, nil
+}
+
 // FindAllDomains returns a page of domain records
 func FindAllDomains(db sqlx.Ext, pager entities.Pager, sorter entities.Sorter) ([]*Domain, error) {
 	rows, err := db.Queryx(fmt.Sprintf("SELECT * FROM domain %v %v;", orderByClause(sorter), limitOffset(pager)))
@@ -127,6 +132,34 @@ func FindAllDomains(db sqlx.Ext, pager entities.Pager, sorter entities.Sorter) (
 			return nil, err
 		}
 		domains = append(domains, &d)
+	}
+	return domains, nil
+}
+
+// FindDomainsByUser returns a page of domain records filtered by a given user ID
+func FindDomainsByUser(db *sqlx.DB, userID string, pager entities.Pager, sorter entities.Sorter) ([]*Domain, error) {
+	q := fmt.Sprintf(`SELECT * FROM domain WHERE domain_id
+		IN (
+			SELECT DISTINCT domain_id FROM domain_user WHERE user_id
+				IN (SELECT user_id FROM user WHERE object_id = ?)
+		)
+		%v %v;`, orderByClause(sorter), limitOffset(pager))
+	rows, err := db.Queryx(q, userID)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	domains := []*Domain{}
+	for rows.Next() {
+		var domain Domain
+		err = rows.StructScan(&domain)
+		if err != nil {
+			return nil, err
+		}
+		domains = append(domains, &domain)
 	}
 	return domains, nil
 }

@@ -78,7 +78,7 @@ func DeleteUser(db sqlx.Ext, id string) error {
 	} else if err != nil {
 		return err
 	}
-	err = ExecuteTransactionally(db, func(ext sqlx.Ext) error {
+	err = ExecuteTransactionally(db.(*sqlx.DB), func(ext sqlx.Ext) error {
 		r, err := ext.Exec("DELETE FROM domain_user WHERE user_id = ?;", pk)
 		if err != nil {
 			return err
@@ -109,9 +109,48 @@ func CountUsers(db sqlx.Ext) (int64, error) {
 	return count, nil
 }
 
+// CountUsersByDomain returns a total count of user records belonging to a given domain
+func CountUsersByDomain(db sqlx.Ext, id string) (int64, error) {
+	var count int64
+	err := db.QueryRowx(`SELECT count(*) FROM domain_user WHERE domain_id IN
+		(SELECT domain_id FROM domain WHERE object_id = ?);`, id).Scan(&count)
+	if err != nil {
+		return -1, err
+	}
+	return count, nil
+}
+
 // FindAllUsers returns a page of user records
-func FindAllUsers(db sqlx.Ext, pager entities.Pager, sorter entities.Sorter) ([]*User, error) {
+func FindAllUsers(db *sqlx.DB, pager entities.Pager, sorter entities.Sorter) ([]*User, error) {
 	rows, err := db.Queryx(fmt.Sprintf("SELECT * FROM user %v %v;", orderByClause(sorter), limitOffset(pager)))
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	users := []*User{}
+	for rows.Next() {
+		var user User
+		err = rows.StructScan(&user)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, &user)
+	}
+	return users, nil
+}
+
+// FindUsersByDomain returns a page of user records filtered by a given domain ID
+func FindUsersByDomain(db *sqlx.DB, domainID string, pager entities.Pager, sorter entities.Sorter) ([]*User, error) {
+	q := fmt.Sprintf(`SELECT * FROM user WHERE user_id
+		IN (
+			SELECT DISTINCT user_id FROM domain_user WHERE domain_id
+				IN (SELECT domain_id FROM domain WHERE object_id = ?)
+		)
+		%v %v;`, orderByClause(sorter), limitOffset(pager))
+	rows, err := db.Queryx(q, domainID)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	} else if err != nil {

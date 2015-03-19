@@ -49,6 +49,12 @@ func main() {
 					Name:   "list",
 					Usage:  "Print existing domains",
 					Action: listDomains,
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "user",
+							Usage: "Filter domains by given user ID",
+						},
+					},
 				},
 				{
 					Name:   "find",
@@ -118,6 +124,12 @@ func main() {
 					Name:   "list",
 					Usage:  "List existing users",
 					Action: listUsers,
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "domain",
+							Usage: "Filter users by given domain ID",
+						},
+					},
 				},
 				{
 					Name:   "find",

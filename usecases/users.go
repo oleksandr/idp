@@ -18,6 +18,7 @@ type UserInteractor interface {
 	Delete(user entities.User) error
 	Find(id string) (*entities.User, error)
 	List(pager entities.Pager, sorter entities.Sorter) (*entities.UserCollection, error)
+	ListByDomain(domainID string, pager entities.Pager, sorter entities.Sorter) (*entities.UserCollection, error)
 }
 
 // UserInteractorImpl is an actual interactor that implements UserInteractor
@@ -114,6 +115,30 @@ func (inter *UserInteractorImpl) List(pager entities.Pager, sorter entities.Sort
 		return nil, err
 	}
 	records, err := dl.FindAllUsers(inter.DB, pager, sorter)
+	if err != nil {
+		return nil, err
+	}
+	c := &entities.UserCollection{
+		Users:     []*entities.User{},
+		Paginator: pager.CreatePaginator(len(records), total),
+	}
+	var u *entities.User
+	for _, dto := range records {
+		u = entities.NewUser(dto.Name)
+		u.ID = dto.ID
+		u.Enabled = dto.Enabled
+		c.Users = append(c.Users, u)
+	}
+	return c, nil
+}
+
+// ListByDomain implements a paginated listing of users filtered by given domain ID
+func (inter *UserInteractorImpl) ListByDomain(domainID string, pager entities.Pager, sorter entities.Sorter) (*entities.UserCollection, error) {
+	total, err := dl.CountUsersByDomain(inter.DB, domainID)
+	if err != nil {
+		return nil, err
+	}
+	records, err := dl.FindUsersByDomain(inter.DB, domainID, pager, sorter)
 	if err != nil {
 		return nil, err
 	}

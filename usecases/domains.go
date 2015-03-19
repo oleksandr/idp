@@ -18,6 +18,7 @@ type DomainInteractor interface {
 	Delete(domain entities.Domain) error
 	Find(id string) (*entities.Domain, error)
 	List(pager entities.Pager, sorter entities.Sorter) (*entities.DomainCollection, error)
+	ListByUser(userID string, pager entities.Pager, sorter entities.Sorter) (*entities.DomainCollection, error)
 }
 
 // DomainInteractorImpl is an actual interactor that implements DomainInteractor
@@ -96,12 +97,35 @@ func (inter *DomainInteractorImpl) List(pager entities.Pager, sorter entities.So
 		Domains:   []*entities.Domain{},
 		Paginator: pager.CreatePaginator(len(records), total),
 	}
-	var d *entities.Domain
 	for _, dto := range records {
-		d = entities.NewDomain(dto.Name, dto.Description)
-		d.ID = dto.ID
-		d.Enabled = dto.Enabled
-		c.Domains = append(c.Domains, d)
+		c.Domains = append(c.Domains, domainRecordToEntity(dto))
 	}
 	return c, nil
+}
+
+// ListByUser implements a paginated listing of domains filtered by a given user ID
+func (inter *DomainInteractorImpl) ListByUser(userID string, pager entities.Pager, sorter entities.Sorter) (*entities.DomainCollection, error) {
+	total, err := dl.CountDomainsByUser(inter.DB, userID)
+	if err != nil {
+		return nil, err
+	}
+	records, err := dl.FindDomainsByUser(inter.DB, userID, pager, sorter)
+	if err != nil {
+		return nil, err
+	}
+	c := &entities.DomainCollection{
+		Domains:   []*entities.Domain{},
+		Paginator: pager.CreatePaginator(len(records), total),
+	}
+	for _, dto := range records {
+		c.Domains = append(c.Domains, domainRecordToEntity(dto))
+	}
+	return c, nil
+}
+
+func domainRecordToEntity(record *dl.Domain) *entities.Domain {
+	d := entities.NewDomain(record.Name, record.Description)
+	d.ID = record.ID
+	d.Enabled = record.Enabled
+	return d
 }

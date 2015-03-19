@@ -26,7 +26,11 @@ func listDomains(c *cli.Context) {
 	fmt.Fprintln(w, "ID\tName\tEnabled\tDescription")
 
 	for {
-		collection, err = domainInteractor.List(pager, sorter)
+		if c.String("user") != "" {
+			collection, err = domainInteractor.ListByUser(c.String("user"), pager, sorter)
+		} else {
+			collection, err = domainInteractor.List(pager, sorter)
+		}
 		assertError(err)
 		for _, d := range collection.Domains {
 			fmt.Fprintf(w, "%v\t%v\t%v\t%v\n", d.ID, d.Name, d.Enabled, d.Description)
