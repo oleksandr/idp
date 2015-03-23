@@ -358,6 +358,28 @@ func main() {
 					Name:   "update",
 					Usage:  "Modifies an existing permission",
 					Action: updatePermission,
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "name",
+							Usage: "New permission's name",
+						},
+						cli.StringFlag{
+							Name:  "description",
+							Usage: "New permission's description",
+						},
+						cli.StringFlag{
+							Name:  "rule",
+							Usage: "New permission's evaluation rule",
+						},
+						cli.BoolFlag{
+							Name:  "enable",
+							Usage: "Enable permission",
+						},
+						cli.BoolFlag{
+							Name:  "disable",
+							Usage: "Disable permission",
+						},
+					},
 				},
 				{
 					Name:   "remove",
