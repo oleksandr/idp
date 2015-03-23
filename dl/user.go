@@ -190,3 +190,39 @@ func FindUser(db sqlx.Ext, id string) (*User, error) {
 	}
 	return &u, nil
 }
+
+// FindUserInDomain finds a user by given user ID in a given domain
+func FindUserInDomain(db sqlx.Ext, userID, domainID string) (*User, error) {
+	var u User
+	q := `SELECT user.* FROM domain_user
+   		LEFT JOIN user ON domain_user.user_id=user.user_id
+   		LEFT JOIN domain ON domain_user.domain_id=domain.domain_id
+   		WHERE user.object_id = ?
+   		AND domain.object_id = ?
+   		LIMIT 1;`
+	err := db.QueryRowx(q, userID, domainID).StructScan(&u)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+// AddUserToDomain assign a given user to
+func AddUserToDomain(db sqlx.Ext, userID, domainID string) error {
+	q := `INSERT OR REPLACE INTO domain_user (user_id, domain_id)
+		SELECT user.user_id, domain.domain_id FROM user, domain
+		WHERE user.object_id = ? AND domain.object_id = ?;`
+	_, err := db.Exec(q, userID, domainID)
+	return err
+}
+
+// RemoveUserFromDomain removes a user from a domain
+func RemoveUserFromDomain(db sqlx.Ext, userID, domainID string) error {
+	q := `DELETE FROM domain_user
+			WHERE domain_user.user_id IN (SELECT user_id FROM user WHERE user.object_id = ?)
+			AND domain_user.domain_id IN (SELECT domain_id FROM domain WHERE domain.object_id = ?);`
+	_, err := db.Exec(q, userID, domainID)
+	return err
+}

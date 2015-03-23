@@ -68,7 +68,7 @@ func addUser(c *cli.Context) {
 	if c.String("password") == "" {
 		assertError(fmt.Errorf("You need to specify user password --password option"))
 	}
-	u := entities.NewUser(c.String("name"))
+	u := entities.NewBasicUser(c.String("name"))
 	u.SetPassword(c.String("password"))
 	u.Enabled = !c.Bool("disable")
 

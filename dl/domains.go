@@ -30,6 +30,7 @@ func SaveDomain(db sqlx.Ext, d Domain) (*Domain, error) {
 		q   string
 		r   sql.Result
 		err error
+		now = time.Now()
 	)
 
 	f, err := FindDomain(db, d.ID)
@@ -37,7 +38,6 @@ func SaveDomain(db sqlx.Ext, d Domain) (*Domain, error) {
 		return nil, err
 	}
 
-	now := time.Now()
 	if f != nil {
 		f.UpdatedOn = now
 		f.Name = d.Name
@@ -184,11 +184,4 @@ func FindDomain(db sqlx.Ext, id string) (*Domain, error) {
 		return nil, err
 	}
 	return &d, nil
-}
-
-// AddUserToDomain assign a given user to
-func AddUserToDomain(db sqlx.Ext, u User, d Domain) error {
-	q := "INSERT INTO domain_user (domain_id, user_id) VALUES (?, ?);"
-	_, err := db.Exec(q, d.PK, u.PK)
-	return err
 }

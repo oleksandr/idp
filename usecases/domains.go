@@ -13,10 +13,10 @@ import (
 // signatures
 //
 type DomainInteractor interface {
-	Create(domain entities.Domain) error
-	Update(domain entities.Domain) error
-	Delete(domain entities.Domain) error
-	Find(id string) (*entities.Domain, error)
+	Create(domain entities.BasicDomain) error
+	Update(domain entities.BasicDomain) error
+	Delete(domain entities.BasicDomain) error
+	Find(id string) (*entities.BasicDomain, error)
 	List(pager entities.Pager, sorter entities.Sorter) (*entities.DomainCollection, error)
 	ListByUser(userID string, pager entities.Pager, sorter entities.Sorter) (*entities.DomainCollection, error)
 }
@@ -27,7 +27,7 @@ type DomainInteractorImpl struct {
 }
 
 // Create creates a new domain with a given name and description
-func (inter *DomainInteractorImpl) Create(domain entities.Domain) error {
+func (inter *DomainInteractorImpl) Create(domain entities.BasicDomain) error {
 	if ok, err := domain.IsValid(); !ok {
 		return fmt.Errorf("Domain is not valid: %v", err.Error())
 	}
@@ -45,7 +45,7 @@ func (inter *DomainInteractorImpl) Create(domain entities.Domain) error {
 }
 
 // Update updates all attributes of a given domain entity in the database
-func (inter *DomainInteractorImpl) Update(domain entities.Domain) error {
+func (inter *DomainInteractorImpl) Update(domain entities.BasicDomain) error {
 	if ok, err := domain.IsValid(); !ok {
 		return fmt.Errorf("Domain is not valid: %v", err.Error())
 	}
@@ -63,7 +63,7 @@ func (inter *DomainInteractorImpl) Update(domain entities.Domain) error {
 }
 
 // Delete removes domain and all assigned entities from storage
-func (inter *DomainInteractorImpl) Delete(domain *entities.Domain) error {
+func (inter *DomainInteractorImpl) Delete(domain entities.BasicDomain) error {
 	err := dl.DeleteDomain(inter.DB, domain.ID)
 	if err != nil {
 		return err
@@ -72,15 +72,12 @@ func (inter *DomainInteractorImpl) Delete(domain *entities.Domain) error {
 }
 
 // Find finds a domain by given domain ID
-func (inter *DomainInteractorImpl) Find(id string) (*entities.Domain, error) {
+func (inter *DomainInteractorImpl) Find(id string) (*entities.BasicDomain, error) {
 	r, err := dl.FindDomain(inter.DB, id)
 	if err != nil {
 		return nil, err
 	}
-	d := entities.NewDomain(r.Name, r.Description)
-	d.ID = r.ID
-	d.Enabled = r.Enabled
-	return d, nil
+	return basicDomainRecordToEntity(r), nil
 }
 
 // List implements a paginated listing of domains
@@ -123,10 +120,17 @@ func (inter *DomainInteractorImpl) ListByUser(userID string, pager entities.Page
 	return c, nil
 }
 
-func domainRecordToEntity(record *dl.Domain) *entities.Domain {
-	d := entities.NewDomain(record.Name, record.Description)
+func basicDomainRecordToEntity(record *dl.Domain) *entities.BasicDomain {
+	d := entities.NewBasicDomain(record.Name, record.Description)
 	d.ID = record.ID
 	d.Enabled = record.Enabled
+	return d
+}
+
+func domainRecordToEntity(record *dl.Domain) *entities.Domain {
+	d := new(entities.Domain)
+	basicDomain := basicDomainRecordToEntity(record)
+	d.BasicDomain = *basicDomain
 	d.UsersCount = record.UsersCount
 	return d
 }

@@ -8,26 +8,23 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-//
-// User entities represent users.
-//
+// BasicUser contains basic user attributes
+type BasicUser struct {
+	ID       string `json:"user_id"`
+	Name     string `json:"name"`
+	Password string `json:"-"`
+	Enabled  bool   `json:"enabled"`
+}
+
+// User entities represent users
 type User struct {
-	ID           string `json:"user_id"`
-	Name         string `json:"name"`
-	Password     string `json:"-"`
-	Enabled      bool   `json:"enabled"`
-	DomainsCount int64  `json:"-"`
+	BasicUser
+	DomainsCount int64 `json:"-"`
 }
 
-// DomainUser extends basic User structure with information about his/hers domains
-type DomainUser struct {
-	User
-	Domains []Domain `json:"domains"`
-}
-
-// NewUser - a constructor for `User`
-func NewUser(name string) *User {
-	a := new(User)
+// NewBasicUser - a constructor for `User`
+func NewBasicUser(name string) *BasicUser {
+	a := new(BasicUser)
 	a.ID = uuid.NewV4().String()
 	a.Name = name
 	a.Enabled = true
@@ -35,12 +32,12 @@ func NewUser(name string) *User {
 }
 
 // SetPassword hashes a given clearTxt and assigns it to password field
-func (u *User) SetPassword(clearTxt string) {
+func (u *BasicUser) SetPassword(clearTxt string) {
 	u.Password = passwordHash(clearTxt)
 }
 
 // IsValid checks if user is valid
-func (u *User) IsValid() (bool, error) {
+func (u *BasicUser) IsValid() (bool, error) {
 	if u.Name == "" {
 		return false, fmt.Errorf("Name cannot be empty!")
 	}
@@ -58,9 +55,13 @@ func passwordHash(s string) string {
 	return fmt.Sprintf("%x", hash.Sum(nil))
 }
 
-//
+// BasicUserCollection is a paginated collection of User entities
+type BasicUserCollection struct {
+	Users     []*BasicUser `json:"users"`
+	Paginator *Paginator   `json:"paginator"`
+}
+
 // UserCollection is a paginated collection of User entities
-//
 type UserCollection struct {
 	Users     []*User    `json:"users"`
 	Paginator *Paginator `json:"paginator"`

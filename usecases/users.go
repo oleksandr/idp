@@ -13,10 +13,11 @@ import (
 // signatures
 //
 type UserInteractor interface {
-	Create(user entities.User, domainIDs []string) error
-	Update(user entities.User) error
-	Delete(user entities.User) error
-	Find(id string) (*entities.User, error)
+	Create(user entities.BasicUser, domainIDs []string) error
+	Update(user entities.BasicUser) error
+	Delete(user entities.BasicUser) error
+	Find(id string) (*entities.BasicUser, error)
+	FindUserInDomain(userID, domainID string) (*entities.BasicUser, error)
 	List(pager entities.Pager, sorter entities.Sorter) (*entities.UserCollection, error)
 	ListByDomain(domainID string, pager entities.Pager, sorter entities.Sorter) (*entities.UserCollection, error)
 }
@@ -27,7 +28,7 @@ type UserInteractorImpl struct {
 }
 
 // Create creates a new user with a given name and description and assign it to a given domain
-func (inter *UserInteractorImpl) Create(user entities.User, domainIDs []string) error {
+func (inter *UserInteractorImpl) Create(user entities.BasicUser, domainIDs []string) error {
 	if ok, err := user.IsValid(); !ok {
 		return fmt.Errorf("User is not valid: %v", err.Error())
 	}
@@ -59,7 +60,7 @@ func (inter *UserInteractorImpl) Create(user entities.User, domainIDs []string) 
 		}
 		// Assign user to domains
 		for _, d := range domains {
-			dl.AddUserToDomain(ext, *created, *d)
+			dl.AddUserToDomain(ext, created.ID, d.ID)
 		}
 		return nil
 	})
@@ -67,7 +68,7 @@ func (inter *UserInteractorImpl) Create(user entities.User, domainIDs []string) 
 }
 
 // Update updates all attributes of a given user entity in the database
-func (inter *UserInteractorImpl) Update(user entities.User) error {
+func (inter *UserInteractorImpl) Update(user entities.BasicUser) error {
 	if ok, err := user.IsValid(); !ok {
 		return fmt.Errorf("User is not valid: %v", err.Error())
 	}
@@ -86,7 +87,7 @@ func (inter *UserInteractorImpl) Update(user entities.User) error {
 }
 
 // Delete removes user and all assigned entities from storage
-func (inter *UserInteractorImpl) Delete(user entities.User) error {
+func (inter *UserInteractorImpl) Delete(user entities.BasicUser) error {
 	err := dl.DeleteUser(inter.DB, user.ID)
 	if err != nil {
 		return err
@@ -95,17 +96,21 @@ func (inter *UserInteractorImpl) Delete(user entities.User) error {
 }
 
 // Find finds a user by given user ID
-func (inter *UserInteractorImpl) Find(id string) (*entities.User, error) {
+func (inter *UserInteractorImpl) Find(id string) (*entities.BasicUser, error) {
 	r, err := dl.FindUser(inter.DB, id)
 	if err != nil {
 		return nil, err
 	}
-	u := new(entities.User)
-	u.Name = r.Name
-	u.ID = r.ID
-	u.Password = r.Password
-	u.Enabled = r.Enabled
-	return u, nil
+	return basicUserRecordToEntity(r), nil
+}
+
+// FindUserInDomain checks if a given user is assigned to a given domain
+func (inter *UserInteractorImpl) FindUserInDomain(userID, domainID string) (*entities.BasicUser, error) {
+	r, err := dl.FindUserInDomain(inter.DB, userID, domainID)
+	if err != nil {
+		return nil, err
+	}
+	return basicUserRecordToEntity(r), nil
 }
 
 // List implements a paginated listing of users
@@ -148,11 +153,18 @@ func (inter *UserInteractorImpl) ListByDomain(domainID string, pager entities.Pa
 	return c, nil
 }
 
-func userRecordToEntity(record *dl.User) *entities.User {
-	u := entities.NewUser(record.Name)
+func basicUserRecordToEntity(record *dl.User) *entities.BasicUser {
+	u := entities.NewBasicUser(record.Name)
 	u.ID = record.ID
 	u.Password = record.Password
 	u.Enabled = record.Enabled
+	return u
+}
+
+func userRecordToEntity(record *dl.User) *entities.User {
+	u := new(entities.User)
+	basicUser := basicUserRecordToEntity(record)
+	u.BasicUser = *basicUser
 	u.DomainsCount = record.DomainsCount
 	return u
 }

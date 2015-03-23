@@ -13,9 +13,11 @@ import (
 )
 
 var (
-	db               *sqlx.DB
-	domainInteractor *usecases.DomainInteractorImpl
-	userInteractor   *usecases.UserInteractorImpl
+	db                *sqlx.DB
+	domainInteractor  *usecases.DomainInteractorImpl
+	userInteractor    *usecases.UserInteractorImpl
+	sessionInteractor *usecases.SessionInteractorImpl
+	rbacInteractor    *usecases.RBACInteractorImpl
 
 //rbacInteractor   *usecases.RBACInteractorImpl
 )
@@ -37,8 +39,10 @@ func main() {
 	domainInteractor.DB = db
 	userInteractor = new(usecases.UserInteractorImpl)
 	userInteractor.DB = db
-	//rbacInteractor = new(usecases.RBACInteractorImpl)
-	//sessionInteractor := new(idp.SessionInteractorImpl)
+	sessionInteractor = new(usecases.SessionInteractorImpl)
+	sessionInteractor.DB = db
+	rbacInteractor = new(usecases.RBACInteractorImpl)
+	rbacInteractor.DB = db
 
 	app.Commands = []cli.Command{
 		{
@@ -194,6 +198,16 @@ func main() {
 					Name:   "list",
 					Usage:  "List existing sessions",
 					Action: listSessions,
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "domain",
+							Usage: "Filter sessions by given domain ID",
+						},
+						cli.StringFlag{
+							Name:  "user",
+							Usage: "Filter sessions by given user ID",
+						},
+					},
 				},
 				{
 					Name:   "find",
@@ -201,13 +215,35 @@ func main() {
 					Action: findSession,
 				},
 				{
-					Name:   "add",
-					Usage:  "Add a new session",
+					Name:   "create",
+					Usage:  "Create a new session",
 					Action: addSession,
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "user",
+							Usage: "User ID for a session",
+						},
+						cli.StringFlag{
+							Name:  "domain",
+							Usage: "Domain ID for a session",
+						},
+						cli.StringFlag{
+							Name:  "agent",
+							Usage: "User-Agent for a session",
+						},
+						cli.StringFlag{
+							Name:  "remote",
+							Usage: "Remote address for a session",
+						},
+						cli.DurationFlag{
+							Name:  "ttl",
+							Usage: "TTL of the session (e.g. 30s, 10m, 1h)",
+						},
+					},
 				},
 				{
-					Name:   "remove",
-					Usage:  "Remove an existing session by given ID",
+					Name:   "delete",
+					Usage:  "Delete an existing session by given ID",
 					Action: removeSession,
 				},
 			},
@@ -230,11 +266,53 @@ func main() {
 					Name:   "add",
 					Usage:  "Add a new role",
 					Action: addRole,
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "name",
+							Usage: "Role name (e.g. admin, manager)",
+						},
+						cli.StringFlag{
+							Name:  "description",
+							Usage: "Description of a role (e.g. 'Manages all users in the system')",
+						},
+						cli.BoolFlag{
+							Name:  "disable",
+							Usage: "Disable role",
+						},
+					},
 				},
 				{
 					Name:   "update",
 					Usage:  "Modifies an existing role",
 					Action: updateRole,
+					Flags: []cli.Flag{
+						cli.StringSliceFlag{
+							Name:  "add",
+							Usage: "Array of permissions to add",
+							Value: &cli.StringSlice{},
+						},
+						cli.StringSliceFlag{
+							Name:  "remove",
+							Usage: "Array of permissions to remove",
+							Value: &cli.StringSlice{},
+						},
+						cli.StringFlag{
+							Name:  "name",
+							Usage: "New role's name",
+						},
+						cli.StringFlag{
+							Name:  "description",
+							Usage: "New role's description",
+						},
+						cli.BoolFlag{
+							Name:  "enable",
+							Usage: "Enable role",
+						},
+						cli.BoolFlag{
+							Name:  "disable",
+							Usage: "Disable role",
+						},
+					},
 				},
 				{
 					Name:   "remove",
@@ -261,6 +339,20 @@ func main() {
 					Name:   "add",
 					Usage:  "Add a new permission",
 					Action: addPermission,
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "name",
+							Usage: "Permission name (e.g. CreatePost, DeleteCategory)",
+						},
+						cli.StringFlag{
+							Name:  "description",
+							Usage: "Description of a permission (e.g. 'Allow to create new posts')",
+						},
+						cli.BoolFlag{
+							Name:  "disable",
+							Usage: "Disable permission",
+						},
+					},
 				},
 				{
 					Name:   "update",

@@ -29,7 +29,53 @@ CREATE TABLE domain_user (
     user_id INTEGER,
     PRIMARY KEY (domain_id, user_id),
     FOREIGN KEY(domain_id) REFERENCES domain(domain_id),
-    FOREIGN KEY(user_id) REFERENCES user(domain_id)
+    FOREIGN KEY(user_id) REFERENCES user(user_id)
+);
+
+CREATE TABLE role (
+    role_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    description TEXT,
+    is_enabled BOOL
+);
+CREATE UNIQUE INDEX role_name ON role(name);
+
+CREATE TABLE permission (
+    permission_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    description TEXT,
+    evaluation_rule TEXT,
+    is_enabled BOOL
+);
+CREATE UNIQUE INDEX permission_name ON permission(name);
+
+CREATE TABLE role_permission (
+    role_id INTEGER,
+    permission_id INTEGER,
+    PRIMARY KEY (role_id, permission_id),
+    FOREIGN KEY(role_id) REFERENCES role(role_id),
+    FOREIGN KEY(permission_id) REFERENCES permission(permission_id)
+);
+
+CREATE TABLE user_role (
+    user_id INTEGER,
+    role_id INTEGER,
+    PRIMARY KEY (user_id, role_id),
+    FOREIGN KEY(user_id) REFERENCES user(user_id),
+    FOREIGN KEY(role_id) REFERENCES role(role_id)
+);
+
+CREATE TABLE user_session (
+    user_session_id TEXT PRIMARY KEY,
+    domain_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    user_agent TEXT,
+    remote_addr TEXT,
+    created_on DATETIME,
+    updated_on DATETIME,
+    expires_on DATETIME,
+    FOREIGN KEY(domain_id) REFERENCES domain(domain_id),
+    FOREIGN KEY(user_id) REFERENCES user(user_id)
 );
 
 /*

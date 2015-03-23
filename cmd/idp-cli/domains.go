@@ -62,7 +62,7 @@ func addDomain(c *cli.Context) {
 	if c.String("name") == "" {
 		assertError(fmt.Errorf("You need to specify domain name using --name option"))
 	}
-	d := entities.NewDomain(c.String("name"), c.String("description"))
+	d := entities.NewBasicDomain(c.String("name"), c.String("description"))
 	d.Enabled = !c.Bool("disable")
 	err := domainInteractor.Create(*d)
 	assertError(err)
@@ -107,7 +107,7 @@ func removeDomain(c *cli.Context) {
 	d, err := domainInteractor.Find(c.Args().First())
 	assertError(err)
 
-	err = domainInteractor.Delete(d)
+	err = domainInteractor.Delete(*d)
 	assertError(err)
 
 	fmt.Printf("Domain %v deleted\n", d.ID)
