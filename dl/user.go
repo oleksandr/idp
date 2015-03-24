@@ -82,7 +82,15 @@ func DeleteUser(db sqlx.Ext, id string) error {
 		return err
 	}
 	err = ExecuteTransactionally(db.(*sqlx.DB), func(ext sqlx.Ext) error {
-		r, err := ext.Exec("DELETE FROM domain_user WHERE user_id = ?;", pk)
+		r, err := ext.Exec("DELETE FROM user_session WHERE user_id = ?;", pk)
+		if err != nil {
+			return err
+		}
+		r, err = ext.Exec("DELETE FROM user_role WHERE user_id = ?;", pk)
+		if err != nil {
+			return err
+		}
+		r, err = ext.Exec("DELETE FROM domain_user WHERE user_id = ?;", pk)
 		if err != nil {
 			return err
 		}
@@ -224,5 +232,23 @@ func RemoveUserFromDomain(db sqlx.Ext, userID, domainID string) error {
 			WHERE domain_user.user_id IN (SELECT user_id FROM user WHERE user.object_id = ?)
 			AND domain_user.domain_id IN (SELECT domain_id FROM domain WHERE domain.object_id = ?);`
 	_, err := db.Exec(q, userID, domainID)
+	return err
+}
+
+// AssignRoleToUser assign a given role to a user
+func AssignRoleToUser(db sqlx.Ext, roleName, userID string) error {
+	q := `INSERT OR REPLACE INTO user_role (user_id, role_id)
+		SELECT user.user_id, role.role_id FROM user, role
+		WHERE user.object_id = ? AND role.name = ?;`
+	_, err := db.Exec(q, userID, roleName)
+	return err
+}
+
+// RevokeRoleFromUser revoke role from a user
+func RevokeRoleFromUser(db sqlx.Ext, roleName, userID string) error {
+	q := `DELETE FROM user_role
+		WHERE user_role.user_id IN (SELECT user_id FROM user WHERE user.object_id = ?)
+		AND user_role.role_id IN (SELECT role_id FROM role WHERE role.name = ?);`
+	_, err := db.Exec(q, userID, roleName)
 	return err
 }

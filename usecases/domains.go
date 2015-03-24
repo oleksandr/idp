@@ -17,6 +17,7 @@ type DomainInteractor interface {
 	Update(domain entities.BasicDomain) error
 	Delete(domain entities.BasicDomain) error
 	Find(id string) (*entities.BasicDomain, error)
+	CountUsers(domainID string) (int64, error)
 	List(pager entities.Pager, sorter entities.Sorter) (*entities.DomainCollection, error)
 	ListByUser(userID string, pager entities.Pager, sorter entities.Sorter) (*entities.DomainCollection, error)
 }
@@ -78,6 +79,15 @@ func (inter *DomainInteractorImpl) Find(id string) (*entities.BasicDomain, error
 		return nil, err
 	}
 	return basicDomainRecordToEntity(r), nil
+}
+
+// CountUsers return number of users in a domain defined by given domain ID
+func (inter *DomainInteractorImpl) CountUsers(domainID string) (int64, error) {
+	c, err := dl.CountUsersByDomain(inter.DB, domainID)
+	if err != nil {
+		return -1, err
+	}
+	return c, nil
 }
 
 // List implements a paginated listing of domains

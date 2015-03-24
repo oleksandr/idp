@@ -77,7 +77,11 @@ func DeleteDomain(db sqlx.Ext, id string) error {
 		return err
 	}
 	err = ExecuteTransactionally(db.(*sqlx.DB), func(ext sqlx.Ext) error {
-		r, err := ext.Exec("DELETE FROM domain_user WHERE domain_id = ?;", pk)
+		r, err := ext.Exec("DELETE FROM user_session WHERE domain_id = ?;", pk)
+		if err != nil {
+			return err
+		}
+		r, err = ext.Exec("DELETE FROM domain_user WHERE domain_id = ?;", pk)
 		if err != nil {
 			return err
 		}

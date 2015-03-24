@@ -24,7 +24,8 @@ func listSessions(c *cli.Context) {
 
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 0, 8, 1, '\t', 0)
-	fmt.Fprintln(w, "ID\tDomain\tUser\tExpired")
+	fmt.Fprintln(w, "ID\tDOMAIN\tUSER\tEXPIRED")
+	fmt.Fprintln(w, "---\t\t\t")
 
 	for {
 		collection, err = sessionInteractor.List(pager, sorter)

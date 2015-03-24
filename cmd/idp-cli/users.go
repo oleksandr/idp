@@ -23,7 +23,8 @@ func listUsers(c *cli.Context) {
 
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 0, 8, 1, '\t', 0)
-	fmt.Fprintln(w, "ID\tName\tEnabled\tDomains")
+	fmt.Fprintln(w, "ID\tNAME\tENABLED\tDOMAINS")
+	fmt.Fprintln(w, "---\t\t\t")
 
 	for {
 		if c.String("domain") != "" {
@@ -50,11 +51,13 @@ func findUser(c *cli.Context) {
 	}
 	u, err := userInteractor.Find(c.Args().First())
 	assertError(err)
+	count, err := userInteractor.CountDomains(u.ID)
 
 	w := new(tabwriter.Writer)
-	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
-	fmt.Fprintln(w, "ID\tName\tEnabled")
-	fmt.Fprintf(w, "%v\t%v\t%v\n", u.ID, u.Name, u.Enabled)
+	w.Init(os.Stdout, 0, 8, 1, '\t', 0)
+	fmt.Fprintln(w, "ID\tNAME\tENABLED\tDOMAINS")
+	fmt.Fprintln(w, "---\t\t\t")
+	fmt.Fprintf(w, "%v\t%v\t%v\t%v\n", u.ID, u.Name, u.Enabled, count)
 	w.Flush()
 }
 
@@ -98,8 +101,17 @@ func updateUser(c *cli.Context) {
 		u.Enabled = false
 	}
 
-	err = userInteractor.Update(*u)
+	err = userInteractor.Update(*u, c.StringSlice("add-domain"), c.StringSlice("remove-domain"))
 	assertError(err)
+
+	if c.StringSlice("assign-role") != nil && len(c.StringSlice("assign-role")) > 0 {
+		err = userInteractor.AssignRoles(u.ID, c.StringSlice("assign-role"))
+		assertError(err)
+	}
+	if c.StringSlice("revoke-role") != nil && len(c.StringSlice("revoke-role")) > 0 {
+		err = userInteractor.RevokeRoles(u.ID, c.StringSlice("revoke-role"))
+		assertError(err)
+	}
 
 	fmt.Printf("User %v updated\n", u.ID)
 }

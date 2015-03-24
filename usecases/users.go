@@ -14,10 +14,13 @@ import (
 //
 type UserInteractor interface {
 	Create(user entities.BasicUser, domainIDs []string) error
-	Update(user entities.BasicUser) error
+	Update(user entities.BasicUser, addDomainIDs []string, removeDomainIDs []string) error
 	Delete(user entities.BasicUser) error
 	Find(id string) (*entities.BasicUser, error)
 	FindUserInDomain(userID, domainID string) (*entities.BasicUser, error)
+	CountDomains(userID string) (int64, error)
+	AssignRoles(userID string, roleNames []string) error
+	RevokeRoles(userID string, roleNames []string) error
 	List(pager entities.Pager, sorter entities.Sorter) (*entities.UserCollection, error)
 	ListByDomain(domainID string, pager entities.Pager, sorter entities.Sorter) (*entities.UserCollection, error)
 }
@@ -68,22 +71,56 @@ func (inter *UserInteractorImpl) Create(user entities.BasicUser, domainIDs []str
 }
 
 // Update updates all attributes of a given user entity in the database
-func (inter *UserInteractorImpl) Update(user entities.BasicUser) error {
+func (inter *UserInteractorImpl) Update(user entities.BasicUser, addDomainIDs []string, removeDomainIDs []string) error {
 	if ok, err := user.IsValid(); !ok {
 		return fmt.Errorf("User is not valid: %v", err.Error())
 	}
-	u := dl.User{
-		ID:       user.ID,
-		Name:     user.Name,
-		Password: user.Password,
-		Enabled:  user.Enabled,
+	var (
+		err    error
+		found  *dl.Domain
+		add    = []*dl.Domain{}
+		remove = []*dl.Domain{}
+	)
+	// Fetch domains for assignment
+	for _, id := range addDomainIDs {
+		found, err = dl.FindDomain(inter.DB, id)
+		if err != nil {
+			return err
+		}
+		add = append(add, found)
 	}
-	_, err := dl.SaveUser(inter.DB, u)
-	if err != nil {
-		return err
+	// Fetch domains for removal
+	for _, id := range removeDomainIDs {
+		found, err = dl.FindDomain(inter.DB, id)
+		if err != nil {
+			return err
+		}
+		remove = append(remove, found)
 	}
-
-	return nil
+	// Update user and assign to provided domains or unassign from given domains
+	err = dl.ExecuteTransactionally(inter.DB, func(ext sqlx.Ext) error {
+		// Create a user
+		u := dl.User{
+			ID:       user.ID,
+			Name:     user.Name,
+			Password: user.Password,
+			Enabled:  user.Enabled,
+		}
+		updated, err := dl.SaveUser(ext, u)
+		if err != nil {
+			return err
+		}
+		// Assign user to domains
+		for _, d := range add {
+			dl.AddUserToDomain(ext, updated.ID, d.ID)
+		}
+		// Remove user from domains
+		for _, d := range remove {
+			dl.RemoveUserFromDomain(ext, updated.ID, d.ID)
+		}
+		return nil
+	})
+	return err
 }
 
 // Delete removes user and all assigned entities from storage
@@ -111,6 +148,79 @@ func (inter *UserInteractorImpl) FindUserInDomain(userID, domainID string) (*ent
 		return nil, err
 	}
 	return basicUserRecordToEntity(r), nil
+}
+
+// CountDomains return number of users in a domain defined by given domain ID
+func (inter *UserInteractorImpl) CountDomains(userID string) (int64, error) {
+	c, err := dl.CountDomainsByUser(inter.DB, userID)
+	if err != nil {
+		return -1, err
+	}
+	return c, nil
+}
+
+// AssignRoles assigns given set of roles to user
+func (inter *UserInteractorImpl) AssignRoles(userID string, roleNames []string) error {
+	var (
+		found *dl.Role
+		roles = []*dl.Role{}
+	)
+	// Find the user
+	u, err := dl.FindUser(inter.DB, userID)
+	if err != nil {
+		return err
+	}
+	// Fetch roles for assignment
+	for _, name := range roleNames {
+		found, err = dl.FindRoleByName(inter.DB, name)
+		if err != nil {
+			return err
+		}
+		roles = append(roles, found)
+	}
+	// Assign roles in transaction
+	err = dl.ExecuteTransactionally(inter.DB, func(ext sqlx.Ext) error {
+		for _, r := range roles {
+			err = dl.AssignRoleToUser(ext, r.Name, u.ID)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return err
+}
+
+// RevokeRoles revokes given set of roles from user
+func (inter *UserInteractorImpl) RevokeRoles(userID string, roleNames []string) error {
+	var (
+		found *dl.Role
+		roles = []*dl.Role{}
+	)
+	// Find the user
+	u, err := dl.FindUser(inter.DB, userID)
+	if err != nil {
+		return err
+	}
+	// Fetch roles for revoking
+	for _, name := range roleNames {
+		found, err = dl.FindRoleByName(inter.DB, name)
+		if err != nil {
+			return err
+		}
+		roles = append(roles, found)
+	}
+	// Revoke roles in transaction
+	err = dl.ExecuteTransactionally(inter.DB, func(ext sqlx.Ext) error {
+		for _, r := range roles {
+			err = dl.RevokeRoleFromUser(ext, r.Name, u.ID)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return err
 }
 
 // List implements a paginated listing of users

@@ -16,10 +16,8 @@ var (
 	db                *sqlx.DB
 	domainInteractor  *usecases.DomainInteractorImpl
 	userInteractor    *usecases.UserInteractorImpl
-	sessionInteractor *usecases.SessionInteractorImpl
 	rbacInteractor    *usecases.RBACInteractorImpl
-
-//rbacInteractor   *usecases.RBACInteractorImpl
+	sessionInteractor *usecases.SessionInteractorImpl
 )
 
 func main() {
@@ -147,7 +145,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringSliceFlag{
 							Name:  "domain",
-							Usage: "Array of domain IDs to assign user to",
+							Usage: "Domain ID to assign user to",
 							Value: &cli.StringSlice{},
 						},
 						cli.StringFlag{
@@ -169,6 +167,26 @@ func main() {
 					Usage:  "Modifies an existing user",
 					Action: updateUser,
 					Flags: []cli.Flag{
+						cli.StringSliceFlag{
+							Name:  "add-domain",
+							Usage: "Domain ID to assign user to",
+							Value: &cli.StringSlice{},
+						},
+						cli.StringSliceFlag{
+							Name:  "remove-domain",
+							Usage: "Remove user from domain by given ID",
+							Value: &cli.StringSlice{},
+						},
+						cli.StringSliceFlag{
+							Name:  "assign-role",
+							Usage: "Role to assign",
+							Value: &cli.StringSlice{},
+						},
+						cli.StringSliceFlag{
+							Name:  "revoke-role",
+							Usage: "Role to remove",
+							Value: &cli.StringSlice{},
+						},
 						cli.StringFlag{
 							Name:  "password",
 							Usage: "New password",

@@ -23,7 +23,8 @@ func listPermissions(c *cli.Context) {
 
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 0, 8, 4, '\t', 0)
-	fmt.Fprintln(w, "Name\tEnabled\tEvaluation\tDescription")
+	fmt.Fprintln(w, "NAME\tENABLED\tEVALUATION\tDESCRIPTION")
+	fmt.Fprintln(w, "---\t\t\t")
 
 	for {
 		collection, err = rbacInteractor.ListPermissions(pager, sorter)
@@ -49,7 +50,8 @@ func findPermission(c *cli.Context) {
 
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 0, 8, 4, '\t', 0)
-	fmt.Fprintln(w, "Name\tEnabled\tEvaluation\tDescription")
+	fmt.Fprintln(w, "NAME\tENABLED\tEVALUATION\tDESCRIPTION")
+	fmt.Fprintln(w, "---\t\t\t")
 	fmt.Fprintf(w, "%v\t%v\t%v\t%v\n", p.Name, p.Enabled, p.EvaluationRule, p.Description)
 	w.Flush()
 }
@@ -125,7 +127,8 @@ func listRoles(c *cli.Context) {
 
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 0, 8, 4, '\t', 0)
-	fmt.Fprintln(w, "Name\tEnabled\tDescription")
+	fmt.Fprintln(w, "NAME\tENABLED\tDESCRIPTION")
+	fmt.Fprintln(w, "---\t\t")
 
 	for {
 		collection, err = rbacInteractor.ListRoles(pager, sorter)
@@ -151,7 +154,8 @@ func findRole(c *cli.Context) {
 
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 0, 8, 4, '\t', 0)
-	fmt.Fprintln(w, "Name\tEnabled\tDescription")
+	fmt.Fprintln(w, "NAME\tENABLEDt\tDESCRIPTION")
+	fmt.Fprintln(w, "---\t\t")
 	fmt.Fprintf(w, "%v\t%v\t%v\n", r.Name, r.Enabled, r.Description)
 	w.Flush()
 }

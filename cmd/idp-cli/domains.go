@@ -23,7 +23,8 @@ func listDomains(c *cli.Context) {
 
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 0, 8, 1, '\t', 0)
-	fmt.Fprintln(w, "ID\tName\tEnabled\tUsers\tDescription")
+	fmt.Fprintln(w, "ID\tNAME\tENABLED\tUSERS\tDESCRIPTION")
+	fmt.Fprintln(w, "---\t\t\t\t")
 
 	for {
 		if c.String("user") != "" {
@@ -50,11 +51,14 @@ func findDomain(c *cli.Context) {
 	}
 	d, err := domainInteractor.Find(c.Args().First())
 	assertError(err)
+	count, err := domainInteractor.CountUsers(d.ID)
+	assertError(err)
 
 	w := new(tabwriter.Writer)
-	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
-	fmt.Fprintln(w, "ID\tName\tEnabled\tDescription")
-	fmt.Fprintf(w, "%v\t%v\t%v\t%v\n", d.ID, d.Name, d.Enabled, d.Description)
+	w.Init(os.Stdout, 0, 8, 1, '\t', 0)
+	fmt.Fprintln(w, "ID\tNAME\tENABLED\tUSERS\tDESCRIPTION")
+	fmt.Fprintln(w, "---\t\t\t\t")
+	fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\n", d.ID, d.Name, d.Enabled, count, d.Description)
 	w.Flush()
 }
 
