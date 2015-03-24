@@ -96,7 +96,7 @@ func FindPermissionByName(db sqlx.Ext, name string) (*Permission, error) {
 	return &p, nil
 }
 
-// FindPermissionsByNames search for a permission by given name
+// FindPermissionsByNames search for a permission by given set of names
 func FindPermissionsByNames(db sqlx.Ext, names []string) ([]Permission, error) {
 	if len(names) == 0 {
 		return nil, ErrNotFound
@@ -144,6 +144,32 @@ func FindAllPermissions(db sqlx.Ext, pager entities.Pager, sorter entities.Sorte
 	}
 	defer rows.Close()
 
+	perms := []*Permission{}
+	for rows.Next() {
+		var p Permission
+		err = rows.StructScan(&p)
+		if err != nil {
+			return nil, err
+		}
+		perms = append(perms, &p)
+	}
+	return perms, nil
+}
+
+// FindPermissionsByRole returns a page of permission records filtered by a given role
+func FindPermissionsByRole(db *sqlx.DB, roleName string, pager entities.Pager, sorter entities.Sorter) ([]*Permission, error) {
+	q := fmt.Sprintf(`SELECT p.* FROM role_permission AS rp
+		LEFT JOIN permission AS p ON p.permission_id=rp.permission_id
+		LEFT JOIN role AS r ON r.role_id=rp.role_id
+		WHERE r.name=? GROUP BY p.permission_id
+		%v %v;`, orderByClause(sorter, "p"), limitOffset(pager))
+	rows, err := db.Queryx(q, roleName)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 	perms := []*Permission{}
 	for rows.Next() {
 		var p Permission

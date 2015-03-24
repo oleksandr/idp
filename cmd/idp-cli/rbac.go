@@ -27,7 +27,11 @@ func listPermissions(c *cli.Context) {
 	fmt.Fprintln(w, "---\t\t\t")
 
 	for {
-		collection, err = rbacInteractor.ListPermissions(pager, sorter)
+		if c.String("role") != "" {
+			collection, err = rbacInteractor.ListPermissionsByRole(c.String("role"), pager, sorter)
+		} else {
+			collection, err = rbacInteractor.ListPermissions(pager, sorter)
+		}
 		assertError(err)
 		for _, p := range collection.Permissions {
 			fmt.Fprintf(w, "%v\t%v\t%v\t%v\n", p.Name, p.Enabled, p.EvaluationRule, p.Description)

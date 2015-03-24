@@ -20,6 +20,7 @@ type RBACInteractor interface {
 	UpdateRoleWithPermissions(roleName string, permissions []string) error
 	RemovePermissionsFromRole(permissions []string, roleName string) error
 	ListPermissions(pager entities.Pager, sorter entities.Sorter) (*entities.BasicPermissionCollection, error)
+	ListPermissionsByRole(roleName string, pager entities.Pager, sorter entities.Sorter) (*entities.BasicPermissionCollection, error)
 	ListRoles(pager entities.Pager, sorter entities.Sorter) (*entities.BasicRoleCollection, error)
 }
 
@@ -197,6 +198,26 @@ func (inter *RBACInteractorImpl) ListPermissions(pager entities.Pager, sorter en
 		return nil, err
 	}
 	records, err := dl.FindAllPermissions(inter.DB, pager, sorter)
+	if err != nil {
+		return nil, err
+	}
+	c := &entities.BasicPermissionCollection{
+		Permissions: []*entities.BasicPermission{},
+		Paginator:   pager.CreatePaginator(len(records), total),
+	}
+	for _, dto := range records {
+		c.Permissions = append(c.Permissions, basicPermissionRecordToEntity(dto))
+	}
+	return c, nil
+}
+
+// ListPermissionsByRole lists existing permissions by role page by page
+func (inter *RBACInteractorImpl) ListPermissionsByRole(roleName string, pager entities.Pager, sorter entities.Sorter) (*entities.BasicPermissionCollection, error) {
+	total, err := dl.CountPermissions(inter.DB)
+	if err != nil {
+		return nil, err
+	}
+	records, err := dl.FindPermissionsByRole(inter.DB, roleName, pager, sorter)
 	if err != nil {
 		return nil, err
 	}

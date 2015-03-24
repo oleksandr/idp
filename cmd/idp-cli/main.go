@@ -347,6 +347,12 @@ func main() {
 					Name:   "list",
 					Usage:  "List existing permissions",
 					Action: listPermissions,
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "role",
+							Usage: "Filter permissions by given role",
+						},
+					},
 				},
 				{
 					Name:   "find",
