@@ -135,7 +135,11 @@ func listRoles(c *cli.Context) {
 	fmt.Fprintln(w, "---\t\t")
 
 	for {
-		collection, err = rbacInteractor.ListRoles(pager, sorter)
+		if c.String("user") != "" {
+			collection, err = rbacInteractor.ListRolesByUser(c.String("user"), pager, sorter)
+		} else {
+			collection, err = rbacInteractor.ListRoles(pager, sorter)
+		}
 		assertError(err)
 		for _, r := range collection.Roles {
 			fmt.Fprintf(w, "%v\t%v\t%v\n", r.Name, r.Enabled, r.Description)

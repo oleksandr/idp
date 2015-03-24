@@ -22,6 +22,7 @@ type RBACInteractor interface {
 	ListPermissions(pager entities.Pager, sorter entities.Sorter) (*entities.BasicPermissionCollection, error)
 	ListPermissionsByRole(roleName string, pager entities.Pager, sorter entities.Sorter) (*entities.BasicPermissionCollection, error)
 	ListRoles(pager entities.Pager, sorter entities.Sorter) (*entities.BasicRoleCollection, error)
+	ListRolesByUser(userID string, pager entities.Pager, sorter entities.Sorter) (*entities.BasicRoleCollection, error)
 }
 
 // RBACInteractorImpl is an actual interactor that implements RBACInteractor
@@ -238,6 +239,26 @@ func (inter *RBACInteractorImpl) ListRoles(pager entities.Pager, sorter entities
 		return nil, err
 	}
 	records, err := dl.FindAllRoles(inter.DB, pager, sorter)
+	if err != nil {
+		return nil, err
+	}
+	c := &entities.BasicRoleCollection{
+		Roles:     []*entities.BasicRole{},
+		Paginator: pager.CreatePaginator(len(records), total),
+	}
+	for _, dto := range records {
+		c.Roles = append(c.Roles, basicRoleRecordToEntity(dto))
+	}
+	return c, nil
+}
+
+// ListRolesByUser lists existing roles by user page by page
+func (inter *RBACInteractorImpl) ListRolesByUser(userID string, pager entities.Pager, sorter entities.Sorter) (*entities.BasicRoleCollection, error) {
+	total, err := dl.CountRolesByUser(inter.DB, userID)
+	if err != nil {
+		return nil, err
+	}
+	records, err := dl.FindRolesByUser(inter.DB, userID, pager, sorter)
 	if err != nil {
 		return nil, err
 	}

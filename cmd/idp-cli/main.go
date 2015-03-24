@@ -274,6 +274,12 @@ func main() {
 					Name:   "list",
 					Usage:  "List existing roles",
 					Action: listRoles,
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "user",
+							Usage: "Filter role by given user ID",
+						},
+					},
 				},
 				{
 					Name:   "find",

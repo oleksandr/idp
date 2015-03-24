@@ -243,6 +243,17 @@ func CountRoles(db sqlx.Ext) (int64, error) {
 	return count, nil
 }
 
+// CountRolesByUser returns a total count of role records by user
+func CountRolesByUser(db sqlx.Ext, userID string) (int64, error) {
+	var count int64
+	err := db.QueryRowx(`SELECT count(*) FROM user_role WHERE user_id IN
+		(SELECT user_id FROM user WHERE object_id = ?);`, userID).Scan(&count)
+	if err != nil {
+		return -1, err
+	}
+	return count, nil
+}
+
 // FindRoleByName search for a role by given name
 func FindRoleByName(db sqlx.Ext, name string) (*Role, error) {
 	var r Role
@@ -267,6 +278,32 @@ func FindAllRoles(db sqlx.Ext, pager entities.Pager, sorter entities.Sorter) ([]
 	}
 	defer rows.Close()
 
+	roles := []*Role{}
+	for rows.Next() {
+		var r Role
+		err = rows.StructScan(&r)
+		if err != nil {
+			return nil, err
+		}
+		roles = append(roles, &r)
+	}
+	return roles, nil
+}
+
+// FindRolesByUser returns a page of role records filtered by a given user
+func FindRolesByUser(db *sqlx.DB, userID string, pager entities.Pager, sorter entities.Sorter) ([]*Role, error) {
+	q := fmt.Sprintf(`SELECT r.* FROM user_role AS ur
+		LEFT JOIN role AS r ON r.role_id=ur.role_id
+		LEFT JOIN user AS u ON u.user_id=ur.user_id
+		WHERE u.object_id=? GROUP BY r.role_id
+		%v %v;`, orderByClause(sorter, "r"), limitOffset(pager))
+	rows, err := db.Queryx(q, userID)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 	roles := []*Role{}
 	for rows.Next() {
 		var r Role
