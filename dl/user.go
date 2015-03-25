@@ -217,6 +217,24 @@ func FindUserInDomain(db sqlx.Ext, userID, domainID string) (*User, error) {
 	return &u, nil
 }
 
+// FindUserByNameInDomain finds a user by given user name in a given domain
+func FindUserByNameInDomain(db sqlx.Ext, userName, domainID string) (*User, error) {
+	var u User
+	q := `SELECT user.* FROM domain_user
+   		LEFT JOIN user ON domain_user.user_id=user.user_id
+   		LEFT JOIN domain ON domain_user.domain_id=domain.domain_id
+   		WHERE user.name = ?
+   		AND domain.object_id = ?
+   		LIMIT 1;`
+	err := db.QueryRowx(q, userName, domainID).StructScan(&u)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
 // AddUserToDomain assign a given user to
 func AddUserToDomain(db sqlx.Ext, userID, domainID string) error {
 	q := `INSERT OR REPLACE INTO domain_user (user_id, domain_id)

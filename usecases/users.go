@@ -17,7 +17,8 @@ type UserInteractor interface {
 	Update(user entities.BasicUser, addDomainIDs []string, removeDomainIDs []string) error
 	Delete(user entities.BasicUser) error
 	Find(id string) (*entities.BasicUser, error)
-	FindUserInDomain(userID, domainID string) (*entities.BasicUser, error)
+	FindInDomain(userID, domainID string) (*entities.BasicUser, error)
+	FindByNameInDomain(userName, domainID string) (*entities.BasicUser, error)
 	CountDomains(userID string) (int64, error)
 	AssignRoles(userID string, roleNames []string) error
 	RevokeRoles(userID string, roleNames []string) error
@@ -141,9 +142,18 @@ func (inter *UserInteractorImpl) Find(id string) (*entities.BasicUser, error) {
 	return basicUserRecordToEntity(r), nil
 }
 
-// FindUserInDomain checks if a given user is assigned to a given domain
-func (inter *UserInteractorImpl) FindUserInDomain(userID, domainID string) (*entities.BasicUser, error) {
+// FindInDomain checks if a given user is assigned to a given domain
+func (inter *UserInteractorImpl) FindInDomain(userID, domainID string) (*entities.BasicUser, error) {
 	r, err := dl.FindUserInDomain(inter.DB, userID, domainID)
+	if err != nil {
+		return nil, err
+	}
+	return basicUserRecordToEntity(r), nil
+}
+
+// FindByNameInDomain checks if a given user is assigned to a given domain
+func (inter *UserInteractorImpl) FindByNameInDomain(userName, domainID string) (*entities.BasicUser, error) {
+	r, err := dl.FindUserByNameInDomain(inter.DB, userName, domainID)
 	if err != nil {
 		return nil, err
 	}

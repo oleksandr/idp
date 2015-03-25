@@ -2,8 +2,10 @@ package usecases
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/oleksandr/idp/config"
 	"github.com/oleksandr/idp/dl"
 	"github.com/oleksandr/idp/entities"
 )
@@ -14,9 +16,10 @@ import (
 //
 type SessionInteractor interface {
 	Create(session entities.Session) error
-	//Update(user entities.User) error
-	//Delete(user entities.User) error
-	//Find(id string) (*entities.User, error)
+	Retain(session entities.Session) error
+	Delete(session entities.Session) error
+	Find(id string) (*entities.Session, error)
+	FindSpecific(id, userAgent, remoteAddr string) (*entities.Session, error)
 	List(pager entities.Pager, sorter entities.Sorter) (*entities.SessionCollection, error)
 	//ListByDomain(domainID string, pager entities.Pager, sorter entities.Sorter) (*entities.UserCollection, error)
 }
@@ -34,10 +37,10 @@ func (inter *SessionInteractorImpl) Create(session entities.Session) error {
 	if session.IsExpired() {
 		return fmt.Errorf("Session is expired")
 	}
-	if !session.Domain.Enabled {
+	if session.Domain == nil || !session.Domain.Enabled {
 		return fmt.Errorf("Domain is not enabled")
 	}
-	if !session.User.Enabled {
+	if session.User == nil || !session.User.Enabled {
 		return fmt.Errorf("User is not enabled")
 	}
 	_, err := dl.FindUserInDomain(inter.DB, session.User.ID, session.Domain.ID)
@@ -57,6 +60,40 @@ func (inter *SessionInteractorImpl) Create(session entities.Session) error {
 		return err
 	}
 	return nil
+}
+
+// Retain prolongs session's expiration date/time till given time
+func (inter *SessionInteractorImpl) Retain(session entities.Session) error {
+	expiresOn := time.Now().Add(time.Duration(config.SessionTTLMinutes) * time.Minute)
+	err := dl.RetainSession(inter.DB, session.ID, expiresOn)
+	return err
+}
+
+// Delete deletes session from database
+func (inter *SessionInteractorImpl) Delete(session entities.Session) error {
+	err := dl.DeleteSession(inter.DB, session.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Find looks for a session by given session ID
+func (inter *SessionInteractorImpl) Find(id string) (*entities.Session, error) {
+	r, err := dl.FindSession(inter.DB, id)
+	if err != nil {
+		return nil, err
+	}
+	return sessionRecordToEntity(r), nil
+}
+
+// FindSpecific looks for a session by given session ID, user agent and remote address
+func (inter *SessionInteractorImpl) FindSpecific(id, userAgent, remoteAddr string) (*entities.Session, error) {
+	r, err := dl.FindSpecificSession(inter.DB, id, userAgent, remoteAddr)
+	if err != nil {
+		return nil, err
+	}
+	return sessionRecordToEntity(r), nil
 }
 
 // List implements a paginated listing of session

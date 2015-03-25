@@ -33,40 +33,30 @@ type Session struct {
 
 // CreateSession create a new session record based on a given dTO
 func CreateSession(db sqlx.Ext, s Session) (*Session, error) {
-	return nil, fmt.Errorf("MAKE SURE DOMAIN + USER ARE ENABLED")
-	/*
-		var (
-			q   string
-			err error
-			now = time.Now()
-		)
+	now := time.Now()
+	q := `INSERT INTO user_session (
+		user_session_id,
+		domain_id,
+		user_id,
+		user_agent,
+		remote_addr,
+		created_on,
+		updated_on,
+		expires_on
+	) SELECT ?, d.domain_id, u.user_id, ?, ?, ?, ?, ?
+		FROM domain AS d, user AS u
+		WHERE d.object_id = ? AND u.object_id = ?;`
+	_, err := db.Exec(q, s.ID, s.UserAgent, s.RemoteAddr, now, now, s.ExpiresOn, s.DomainID, s.UserID)
+	if err != nil {
+		return nil, err
+	}
 
-		q = `WITH
-			u(id) AS (SELECT user_id FROM user WHERE object_id = ? LIMIT 1),
-			d(id) AS (SELECT domain_id FROM domain WHERE object_id = ? LIMIT 1)
-			INSERT INTO user_session (
-				user_session_id,
-				domain_id,
-				user_id,
-				user_agent,
-				remote_addr,
-				created_on,
-				updated_on,
-				expires_on
-			)
-			SELECT ?, d.id, u.id, ?, ?, ?, ?, ? FROM u, d;`
-		_, err = db.Exec(q, s.UserID, s.DomainID, s.ID, s.UserAgent, s.RemoteAddr, now, now, s.ExpiresOn)
-		if err != nil {
-			return nil, err
-		}
+	created, err := FindSession(db, s.ID)
+	if err != nil {
+		return nil, err
+	}
 
-		created, err := FindSession(db, s.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		return created, nil
-	*/
+	return created, nil
 }
 
 // UpdateSession updates existing session record
@@ -88,6 +78,38 @@ func UpdateSession(db sqlx.Ext, s Session) error {
 		WHERE user_session_id = ?;`
 	_, err = db.Exec(q, s.DomainID, s.UserID, s.UserAgent, s.RemoteAddr, s.CreatedOn, s.UpdatedOn, s.ExpiresOn, s.ID)
 	return err
+}
+
+// RetainSession sets new expires_on attribute for a given session
+func RetainSession(db sqlx.Ext, id string, expiresOn time.Time) error {
+	r, err := db.Exec("UPDATE user_session SET expires_on = ? WHERE user_session_id = ?", expiresOn, id)
+	if err != nil {
+		return err
+	}
+	aff, err := r.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if aff == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// DeleteSession deletes a session from database cascading
+func DeleteSession(db sqlx.Ext, id string) error {
+	r, err := db.Exec("DELETE FROM user_session WHERE user_session_id = ?", id)
+	if err != nil {
+		return err
+	}
+	aff, err := r.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if aff == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 // CountSessions returns a total count of session records in database
@@ -142,6 +164,26 @@ func FindSession(db sqlx.Ext, id string) (*Session, error) {
         WHERE s.user_session_id = ?
         LIMIT 1;`
 	err := db.QueryRowx(q, id).StructScan(&s)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+// FindSpecificSession finds a session by given session ID, user agent and remote address
+func FindSpecificSession(db sqlx.Ext, id string, userAgent, remoteAddr string) (*Session, error) {
+	var s Session
+	q := `SELECT s.*,
+			d.domain_id AS domain_pk, d.object_id AS domain_id, d.name AS domain_name, d.is_enabled AS domain_enabled,
+			u.user_id AS user_pk, u.object_id AS user_id, u.name AS user_name, u.is_enabled AS user_enabled
+		FROM user_session AS s
+        LEFT JOIN user AS u ON s.user_id=u.user_id
+        LEFT JOIN domain AS d ON d.domain_id=s.domain_id
+        WHERE s.user_session_id = ? AND s.user_agent = ? AND s.remote_addr = ?
+        LIMIT 1;`
+	err := db.QueryRowx(q, id, userAgent, remoteAddr).StructScan(&s)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	} else if err != nil {

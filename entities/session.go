@@ -11,14 +11,14 @@ import (
 // Session structure represents user's time limited session
 //
 type Session struct {
-	ID         string       `json:"sid"`
+	ID         string       `json:"id"`
 	Domain     *BasicDomain `json:"domain"`
 	User       *BasicUser   `json:"user"`
 	UserAgent  string       `json:"-"`
 	RemoteAddr string       `json:"-"`
-	CreatedOn  Time         `json:"createdOn"`
-	UpdatedOn  Time         `json:"updatedOn"`
-	ExpiresOn  Time         `json:"expiresOn"`
+	CreatedOn  Time         `json:"created_on"`
+	UpdatedOn  Time         `json:"updated_on"`
+	ExpiresOn  Time         `json:"expires_on"`
 }
 
 // NewSession create a new Session entity

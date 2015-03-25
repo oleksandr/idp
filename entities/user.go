@@ -10,7 +10,7 @@ import (
 
 // BasicUser contains basic user attributes
 type BasicUser struct {
-	ID       string `json:"user_id"`
+	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Password string `json:"-"`
 	Enabled  bool   `json:"enabled"`
@@ -45,6 +45,11 @@ func (u *BasicUser) IsValid() (bool, error) {
 		return false, fmt.Errorf("Password cannot be empty!")
 	}
 	return true, nil
+}
+
+// IsPassword checks if a given clear text is user's password
+func (u *BasicUser) IsPassword(clearTxt string) bool {
+	return u.Password == passwordHash(clearTxt)
 }
 
 // passwordHash one-way hashes a string with the private HashSecret value.

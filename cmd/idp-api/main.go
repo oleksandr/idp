@@ -36,15 +36,18 @@ func main() {
 	domainInteractor.DB = db
 	userInteractor := new(usecases.UserInteractorImpl)
 	userInteractor.DB = db
+	sessionInteractor := new(usecases.SessionInteractorImpl)
+	sessionInteractor.DB = db
 
-	//sessionInteractor := new(usecases.SessionInteractorImpl)
 	// Web handlers
-	domainHandler := new(web.DomainWebHandler)
-	domainHandler.DomainInteractor = domainInteractor
-	userHandler := new(web.UserWebHandler)
-	userHandler.UserInteractor = userInteractor
-	//sessionHandler := new(web.SessionWebHandler)
-	//sessionHandler.SessionInteractor = sessionInteractor
+	//domainHandler := new(web.DomainWebHandler)
+	//domainHandler.DomainInteractor = domainInteractor
+	//userHandler := new(web.UserWebHandler)
+	//userHandler.UserInteractor = userInteractor
+	sessionHandler := new(web.SessionWebHandler)
+	sessionHandler.SessionInteractor = sessionInteractor
+	sessionHandler.UserInteractor = userInteractor
+	sessionHandler.DomainInteractor = domainInteractor
 
 	//
 	// Middleware chain (mind the order!)
@@ -58,6 +61,7 @@ func main() {
 		web.InfoHeadersHandler,   // dummy handler to inject some info headers
 		web.JSONRenderingHandler, // always set JSON content-type for this API
 	)
+	tokenAuthHandler := web.NewAuthenticationHandler(sessionInteractor)
 	protectedChain := alice.New(
 		context.ClearHandler,
 		web.LoggingHandler,
@@ -65,31 +69,37 @@ func main() {
 		contentTypeHandler,
 		web.InfoHeadersHandler,
 		web.JSONRenderingHandler,
-		web.AuthenticationHandler, // always check if request is authenticated
+		tokenAuthHandler, // always check if request is authenticated
 	)
 
 	//
 	// Routing setup
 	//
 	router := newRouter()
+
 	// Domain API
-	router.post("/domains", protectedChain.ThenFunc(domainHandler.Create))
-	router.get("/domains/:id", protectedChain.ThenFunc(domainHandler.Retrieve))
-	router.get("/domains", protectedChain.ThenFunc(domainHandler.List))
-	router.patch("/domains/:id", protectedChain.ThenFunc(domainHandler.Modify))
-	router.delete("/domains/:id", protectedChain.ThenFunc(domainHandler.Delete))
+	/*
+		router.post("/domains", protectedChain.ThenFunc(domainHandler.Create))
+		router.get("/domains/:id", protectedChain.ThenFunc(domainHandler.Retrieve))
+		router.get("/domains", protectedChain.ThenFunc(domainHandler.List))
+		router.patch("/domains/:id", protectedChain.ThenFunc(domainHandler.Modify))
+		router.delete("/domains/:id", protectedChain.ThenFunc(domainHandler.Delete))
+	*/
 	// Users API
-	router.post("/users", protectedChain.ThenFunc(userHandler.Create))
-	router.get("/users/:id", protectedChain.ThenFunc(userHandler.Retrieve))
-	router.get("/users", protectedChain.ThenFunc(userHandler.List))
-	router.patch("/users/:id", protectedChain.ThenFunc(userHandler.Modify))
-	router.delete("/users/:id", protectedChain.ThenFunc(userHandler.Delete))
+	/*
+		router.post("/users", protectedChain.ThenFunc(userHandler.Create))
+		router.get("/users/:id", protectedChain.ThenFunc(userHandler.Retrieve))
+		router.get("/users", protectedChain.ThenFunc(userHandler.List))
+		router.patch("/users/:id", protectedChain.ThenFunc(userHandler.Modify))
+		router.delete("/users/:id", protectedChain.ThenFunc(userHandler.Delete))
+	*/
+
 	// Sessions API
-	// router.post("/sessions", publicChain.ThenFunc(sessionHandler.Create))
-	// router.get("/sessions/:id", protectedChain.ThenFunc(sessionHandler.Retrieve))
-	// router.get("/sessions", protectedChain.ThenFunc(sessionHandler.List))
-	// router.patch("/sessions/:id", protectedChain.ThenFunc(sessionHandler.Modify))
-	// router.delete("/sessions/:id", protectedChain.ThenFunc(sessionHandler.Delete))
+	router.post("/sessions", publicChain.ThenFunc(sessionHandler.Create))
+	router.head("/sessions/current", protectedChain.ThenFunc(sessionHandler.Check))
+	router.get("/sessions/current", protectedChain.ThenFunc(sessionHandler.Retrieve))
+	router.delete("/sessions/current", protectedChain.ThenFunc(sessionHandler.Delete))
+
 	// Utilities
 	router.get("/", publicChain.ThenFunc(web.IndexHandler))
 
@@ -118,6 +128,7 @@ func main() {
 		syscall.SIGINT,
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
+
 	go func() {
 		for _ = range c {
 			// Stop the HTTP server
@@ -127,6 +138,17 @@ func main() {
 			log.Println("Tearing down...")
 			log.Fatalln("Finished - bye bye. ;-)")
 		}
+	}()
+
+	go func() {
+		log.Println("Started expired sessions cleaning routine...")
+		for {
+			select {
+			case <-time.Tick(time.Duration(30) * time.Minute):
+				log.Println("TODO: implement me (clean expired sessions!")
+			}
+		}
+
 	}()
 
 	log.Fatalf("Error in Serve: %s", s.Serve(listener))

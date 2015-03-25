@@ -17,6 +17,7 @@ type DomainInteractor interface {
 	Update(domain entities.BasicDomain) error
 	Delete(domain entities.BasicDomain) error
 	Find(id string) (*entities.BasicDomain, error)
+	FindByName(name string) (*entities.BasicDomain, error)
 	CountUsers(domainID string) (int64, error)
 	List(pager entities.Pager, sorter entities.Sorter) (*entities.DomainCollection, error)
 	ListByUser(userID string, pager entities.Pager, sorter entities.Sorter) (*entities.DomainCollection, error)
@@ -75,6 +76,15 @@ func (inter *DomainInteractorImpl) Delete(domain entities.BasicDomain) error {
 // Find finds a domain by given domain ID
 func (inter *DomainInteractorImpl) Find(id string) (*entities.BasicDomain, error) {
 	r, err := dl.FindDomain(inter.DB, id)
+	if err != nil {
+		return nil, err
+	}
+	return basicDomainRecordToEntity(r), nil
+}
+
+// FindByName finds a domain by given domain name
+func (inter *DomainInteractorImpl) FindByName(name string) (*entities.BasicDomain, error) {
+	r, err := dl.FindDomainByName(inter.DB, name)
 	if err != nil {
 		return nil, err
 	}

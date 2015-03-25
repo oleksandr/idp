@@ -189,3 +189,15 @@ func FindDomain(db sqlx.Ext, id string) (*Domain, error) {
 	}
 	return &d, nil
 }
+
+// FindDomainByName finds a domain by given domain name
+func FindDomainByName(db sqlx.Ext, name string) (*Domain, error) {
+	var d Domain
+	err := db.QueryRowx("SELECT * FROM domain WHERE name = ? LIMIT 1", name).StructScan(&d)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
