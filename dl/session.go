@@ -33,7 +33,7 @@ type Session struct {
 
 // CreateSession create a new session record based on a given dTO
 func CreateSession(db sqlx.Ext, s Session) (*Session, error) {
-	now := time.Now()
+	now := time.Now().UTC()
 	q := `INSERT INTO user_session (
 		user_session_id,
 		domain_id,
@@ -64,7 +64,7 @@ func UpdateSession(db sqlx.Ext, s Session) error {
 	var (
 		q   string
 		err error
-		now = time.Now()
+		now = time.Now().UTC()
 	)
 	s.UpdatedOn = now
 	q = `UPDATE user_session SET
@@ -110,6 +110,13 @@ func DeleteSession(db sqlx.Ext, id string) error {
 		return ErrNotFound
 	}
 	return nil
+}
+
+// DeleteExpiredSessions purges expired sessions from database
+func DeleteExpiredSessions(db sqlx.Ext) error {
+	now := time.Now().UTC()
+	_, err := db.Exec("DELETE FROM user_session WHERE expires_on <= ?", now)
+	return err
 }
 
 // CountSessions returns a total count of session records in database

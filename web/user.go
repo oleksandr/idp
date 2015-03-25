@@ -25,7 +25,7 @@ func (handler *UserWebHandler) Create(w http.ResponseWriter, r *http.Request) {
 	   }
 
 	   a.ID = "abcd"
-	   a.CreatedOn.Time = time.Now()
+	   a.CreatedOn.Time = time.Now().UTC()
 	   a.UpdatedOn = a.CreatedOn
 	*/
 

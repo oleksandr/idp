@@ -1,12 +1,13 @@
 package main
 
 import (
-	"flag"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -16,20 +17,23 @@ import (
 	"github.com/justinas/alice"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/oleksandr/idp/config"
 	"github.com/oleksandr/idp/usecases"
 	"github.com/oleksandr/idp/web"
 )
 
 func main() {
-	// TODO: move this to environment-based config (12 factors!)
-	var addr = flag.String("addr", ":8080", "HTTP bind address")
-	flag.Parse()
+	// Essentials to startup
+	addr := os.Getenv(config.EnvIDPAddr)
+	if addr == "" {
+		addr = ":8000"
+	}
+	db := sqlx.MustConnect(os.Getenv(config.EnvIDPDriver), os.Getenv(config.EnvIDPDSN))
+	defer db.Close()
 
 	//
 	// Core setup
 	//
-	db := sqlx.MustConnect("sqlite3", "/Users/alex/src/github.com/oleksandr/idp/db.sqlite3")
-	defer db.Close()
 
 	// Interactors
 	domainInteractor := new(usecases.DomainInteractorImpl)
@@ -95,10 +99,10 @@ func main() {
 	*/
 
 	// Sessions API
-	router.post("/sessions", publicChain.ThenFunc(sessionHandler.Create))
-	router.head("/sessions/current", protectedChain.ThenFunc(sessionHandler.Check))
-	router.get("/sessions/current", protectedChain.ThenFunc(sessionHandler.Retrieve))
-	router.delete("/sessions/current", protectedChain.ThenFunc(sessionHandler.Delete))
+	router.post(versionedRoute("/sessions"), publicChain.ThenFunc(sessionHandler.Create))
+	router.head(versionedRoute("/sessions/current"), protectedChain.ThenFunc(sessionHandler.Check))
+	router.get(versionedRoute("/sessions/current"), protectedChain.ThenFunc(sessionHandler.Retrieve))
+	router.delete(versionedRoute("/sessions/current"), protectedChain.ThenFunc(sessionHandler.Delete))
 
 	// Utilities
 	router.get("/", publicChain.ThenFunc(web.IndexHandler))
@@ -107,7 +111,7 @@ func main() {
 	// Make a HTTP Server structure using our custom handler/router
 	//
 	s := &http.Server{
-		Addr:           *addr,
+		Addr:           addr,
 		Handler:        router,
 		ReadTimeout:    30 * time.Second,
 		WriteTimeout:   30 * time.Second,
@@ -115,11 +119,11 @@ func main() {
 	}
 
 	// Create binding address listener
-	listener, listenErr := net.Listen("tcp", *addr)
+	listener, listenErr := net.Listen("tcp", addr)
 	if listenErr != nil {
 		log.Fatalf("Could not listen: %s", listenErr)
 	}
-	log.Println("Listening", *addr)
+	log.Println("Listening", addr)
 
 	// Setup signal catcher for the server's proper shutdown
 	c := make(chan os.Signal, 1)
@@ -145,11 +149,16 @@ func main() {
 		for {
 			select {
 			case <-time.Tick(time.Duration(30) * time.Minute):
-				log.Println("TODO: implement me (clean expired sessions!")
+				log.Println("Purging sessions...")
+				sessionInteractor.Purge()
 			}
 		}
 
 	}()
 
 	log.Fatalf("Error in Serve: %s", s.Serve(listener))
+}
+
+func versionedRoute(r string) string {
+	return fmt.Sprintf("/v%v/%v", config.CurrentAPIVersion, strings.TrimLeft(r, "/"))
 }

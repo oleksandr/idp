@@ -56,7 +56,7 @@ func (u *BasicUser) IsPassword(clearTxt string) bool {
 func passwordHash(s string) string {
 	hash := sha1.New()
 	hash.Write([]byte(s))
-	hash.Write([]byte(config.HashSecretSalt))
+	hash.Write([]byte(config.HashSecretSalt()))
 	return fmt.Sprintf("%x", hash.Sum(nil))
 }
 

@@ -1,17 +1,24 @@
 package config
 
-// Current version
-const CurrentVersion = "1"
+const (
+	// CurrentAPIVersion is current IdP API version
+	CurrentAPIVersion = "1"
+	// CurrentCLIVersion is current IdP's CLI version
+	CurrentCLIVersion = "0.0.1"
 
-// SessionTTLMinutes is a default TTL for all user sessions
-const SessionTTLMinutes = 30
+	// EnvIDPAddr environment variable
+	EnvIDPAddr = "IDP_ADDR"
+	// EnvIDPDriver environment variable
+	EnvIDPDriver = "IDP_DB_Driver"
+	// EnvIDPDSN environment variable
+	EnvIDPDSN = "IDP_DB_DSN"
+	// EnvIDPSessionTTL environment variable
+	EnvIDPSessionTTL = "IDP_SESSION_TTL"
+	// EnvIDPSecretSalt environment variable
+	EnvIDPSecretSalt = "IDP_SECRET_SALT"
 
-// Used for password hashing
-//TODO: move to external configuration
-const HashSecretSalt string = "5c8f28d559f89414e8D317f28850A32c"
-
-// Context key to store router's params
-const CtxParamsKey = "params"
-
-// Context key to store session info
-const CtxSessionKey = "session"
+	// CtxParamsKey key to store router's params
+	CtxParamsKey = "params"
+	// CtxSessionKey key to store session info
+	CtxSessionKey = "session"
+)

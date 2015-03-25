@@ -36,7 +36,7 @@ func SaveUser(db sqlx.Ext, u User) (*User, error) {
 		return nil, err
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 	if f != nil {
 		f.UpdatedOn = now
 		f.Name = u.Name

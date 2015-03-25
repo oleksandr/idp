@@ -18,10 +18,10 @@ type SessionInteractor interface {
 	Create(session entities.Session) error
 	Retain(session entities.Session) error
 	Delete(session entities.Session) error
+	Purge() error
 	Find(id string) (*entities.Session, error)
 	FindSpecific(id, userAgent, remoteAddr string) (*entities.Session, error)
 	List(pager entities.Pager, sorter entities.Sorter) (*entities.SessionCollection, error)
-	//ListByDomain(domainID string, pager entities.Pager, sorter entities.Sorter) (*entities.UserCollection, error)
 }
 
 // SessionInteractorImpl is an actual interactor that implements SessionInteractor
@@ -64,7 +64,7 @@ func (inter *SessionInteractorImpl) Create(session entities.Session) error {
 
 // Retain prolongs session's expiration date/time till given time
 func (inter *SessionInteractorImpl) Retain(session entities.Session) error {
-	expiresOn := time.Now().Add(time.Duration(config.SessionTTLMinutes) * time.Minute)
+	expiresOn := time.Now().UTC().Add(time.Duration(config.SessionTTLMinutes()) * time.Minute)
 	err := dl.RetainSession(inter.DB, session.ID, expiresOn)
 	return err
 }
@@ -72,6 +72,15 @@ func (inter *SessionInteractorImpl) Retain(session entities.Session) error {
 // Delete deletes session from database
 func (inter *SessionInteractorImpl) Delete(session entities.Session) error {
 	err := dl.DeleteSession(inter.DB, session.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Purge purges all expired sessions
+func (inter *SessionInteractorImpl) Purge() error {
+	err := dl.DeleteExpiredSessions(inter.DB)
 	if err != nil {
 		return err
 	}

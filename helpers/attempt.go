@@ -24,7 +24,7 @@ type Attempt struct {
 
 // Start begins a new sequence of attempts for the given strategy.
 func (s AttemptStrategy) Start() *Attempt {
-	now := time.Now()
+	now := time.Now().UTC()
 	return &Attempt{
 		strategy: s,
 		last:     now,
@@ -36,7 +36,7 @@ func (s AttemptStrategy) Start() *Attempt {
 // Next waits until it is time to perform the next attempt or returns
 // false if it is time to stop trying.
 func (a *Attempt) Next() bool {
-	now := time.Now()
+	now := time.Now().UTC()
 	sleep := a.nextSleep(now)
 	if !a.force && !now.Add(sleep).Before(a.end) && a.strategy.Min <= a.count {
 		return false
@@ -44,7 +44,7 @@ func (a *Attempt) Next() bool {
 	a.force = false
 	if sleep > 0 && a.count > 0 {
 		time.Sleep(sleep)
-		now = time.Now()
+		now = time.Now().UTC()
 	}
 	a.count++
 	a.last = now
@@ -66,7 +66,7 @@ func (a *Attempt) HasNext() bool {
 	if a.force || a.strategy.Min > a.count {
 		return true
 	}
-	now := time.Now()
+	now := time.Now().UTC()
 	if now.Add(a.nextSleep(now)).Before(a.end) {
 		a.force = true
 		return true

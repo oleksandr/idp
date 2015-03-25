@@ -30,7 +30,7 @@ func SaveDomain(db sqlx.Ext, d Domain) (*Domain, error) {
 		q   string
 		r   sql.Result
 		err error
-		now = time.Now()
+		now = time.Now().UTC()
 	)
 
 	f, err := FindDomain(db, d.ID)

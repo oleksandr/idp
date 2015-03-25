@@ -30,10 +30,10 @@ func NewSession(user BasicUser, domain BasicDomain, userAgent, remoteAddr string
 		UserAgent:  userAgent,
 		RemoteAddr: remoteAddr,
 	}
-	now := time.Now()
+	now := time.Now().UTC()
 	s.CreatedOn.Time = now
 	s.UpdatedOn.Time = now
-	s.ExpiresOn.Time = now.Add(time.Duration(config.SessionTTLMinutes) * time.Minute)
+	s.ExpiresOn.Time = now.Add(time.Duration(config.SessionTTLMinutes()) * time.Minute)
 	return s
 }
 
@@ -45,7 +45,7 @@ func (s *Session) IsValid() bool {
 
 // IsExpired checks if the session is expired
 func (s *Session) IsExpired() bool {
-	return s.ExpiresOn.Sub(time.Now()) <= 0
+	return s.ExpiresOn.Sub(time.Now().UTC()) <= 0
 }
 
 //

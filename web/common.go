@@ -87,7 +87,7 @@ func JSONRenderingHandler(next http.Handler) http.Handler {
 // (to be extended further)
 func LoggingHandler(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		t1 := time.Now()
+		t1 := time.Now().UTC()
 		// Call the next handler
 		next.ServeHTTP(w, r)
 		// Guess the current domain/user
@@ -98,7 +98,7 @@ func LoggingHandler(next http.Handler) http.Handler {
 			user = s.User.Name
 		}
 		// Log to standard logger
-		log.Printf("[%s@%s][%s] %q %v\n", user, domain, r.Method, r.URL.String(), time.Now().Sub(t1))
+		log.Printf("[%s@%s][%s] %q %v\n", user, domain, r.Method, r.URL.String(), time.Now().UTC().Sub(t1))
 	}
 	return http.HandlerFunc(fn)
 }

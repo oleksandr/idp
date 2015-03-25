@@ -9,6 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/oleksandr/idp/config"
 	"github.com/oleksandr/idp/usecases"
 )
 
@@ -24,12 +25,12 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "idp-client"
 	app.Usage = "Manage Identity Provider database"
-	app.Version = "0.0.1"
+	app.Version = config.CurrentCLIVersion
 	app.Author = "Oleksandr Lobunets"
 	app.Email = "alexander.lobunets@gmail.com"
 
 	// DB
-	db := sqlx.MustConnect("sqlite3", "/Users/alex/src/github.com/oleksandr/idp/db.sqlite3")
+	db := sqlx.MustConnect(os.Getenv(config.EnvIDPDriver), os.Getenv(config.EnvIDPDSN))
 	defer db.Close()
 
 	// Interactors
@@ -216,16 +217,6 @@ func main() {
 					Name:   "list",
 					Usage:  "List existing sessions",
 					Action: listSessions,
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:  "domain",
-							Usage: "Filter sessions by given domain ID",
-						},
-						cli.StringFlag{
-							Name:  "user",
-							Usage: "Filter sessions by given user ID",
-						},
-					},
 				},
 				{
 					Name:   "find",
@@ -260,8 +251,8 @@ func main() {
 					},
 				},
 				{
-					Name:   "delete",
-					Usage:  "Delete an existing session by given ID",
+					Name:   "remove",
+					Usage:  "Remove an existing session by given ID from storage",
 					Action: removeSession,
 				},
 			},

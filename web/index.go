@@ -16,7 +16,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		Version string `json:"version"`
 		Message string `json:"message"`
 	}{
-		Version: fmt.Sprintf("v%v", config.CurrentVersion),
+		Version: fmt.Sprintf("v%v", config.CurrentAPIVersion),
 		Message: "Welcome to Identities API",
 	}
 	w.WriteHeader(http.StatusOK)
