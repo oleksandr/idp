@@ -1,6 +1,7 @@
 package dl
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -56,6 +57,30 @@ func ExecuteTransactionally(db *sqlx.DB, wrappedFunc func(ext sqlx.Ext) error) e
 	}
 
 	return nil
+}
+
+// a cross-db way of escaping table name and field names
+func escapeLiteral(db sqlx.Ext, tableName string) string {
+	if db.DriverName() == "postgres" {
+		return fmt.Sprintf(`"%v"`, tableName)
+	}
+	return fmt.Sprintf("`%v`", tableName)
+}
+
+// a cross-db way of getting the last inserted id
+func lastInsertID(db sqlx.Ext, result sql.Result, tableName, pkName string) (int64, error) {
+	if db.DriverName() == "postgres" {
+		r, err := db.QueryRowx(fmt.Sprintf("SELECT currval(pg_get_serial_sequence('%s', '%s'))", tableName, pkName)).SliceScan()
+		if err != nil {
+			return -1, nil
+		}
+		return r[0].(int64), nil
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return -1, err
+	}
+	return id, nil
 }
 
 // Takes a Sorter and constructs a "ORDER BY" clause if required

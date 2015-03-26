@@ -34,7 +34,7 @@ type Session struct {
 // CreateSession create a new session record based on a given dTO
 func CreateSession(db sqlx.Ext, s Session) (*Session, error) {
 	now := time.Now().UTC()
-	q := `INSERT INTO user_session (
+	q := fmt.Sprintf(`INSERT INTO user_session (
 		user_session_id,
 		domain_id,
 		user_id,
@@ -44,9 +44,9 @@ func CreateSession(db sqlx.Ext, s Session) (*Session, error) {
 		updated_on,
 		expires_on
 	) SELECT ?, d.domain_id, u.user_id, ?, ?, ?, ?, ?
-		FROM domain AS d, user AS u
-		WHERE d.object_id = ? AND u.object_id = ?;`
-	_, err := db.Exec(q, s.ID, s.UserAgent, s.RemoteAddr, now, now, s.ExpiresOn, s.DomainID, s.UserID)
+		FROM domain AS d, %v AS u
+		WHERE d.object_id = ? AND u.object_id = ?;`, escapeLiteral(db, "user"))
+	_, err := db.Exec(db.Rebind(q), s.ID, s.UserAgent, s.RemoteAddr, now, now, s.ExpiresOn, s.DomainID, s.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,13 +76,13 @@ func UpdateSession(db sqlx.Ext, s Session) error {
 			updated_on = ?,
 			expires_on = ?
 		WHERE user_session_id = ?;`
-	_, err = db.Exec(q, s.DomainID, s.UserID, s.UserAgent, s.RemoteAddr, s.CreatedOn, s.UpdatedOn, s.ExpiresOn, s.ID)
+	_, err = db.Exec(db.Rebind(q), s.DomainID, s.UserID, s.UserAgent, s.RemoteAddr, s.CreatedOn, s.UpdatedOn, s.ExpiresOn, s.ID)
 	return err
 }
 
 // RetainSession sets new expires_on attribute for a given session
 func RetainSession(db sqlx.Ext, id string, expiresOn time.Time) error {
-	r, err := db.Exec("UPDATE user_session SET expires_on = ? WHERE user_session_id = ?", expiresOn, id)
+	r, err := db.Exec(db.Rebind("UPDATE user_session SET expires_on = ? WHERE user_session_id = ?"), expiresOn, id)
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func RetainSession(db sqlx.Ext, id string, expiresOn time.Time) error {
 
 // DeleteSession deletes a session from database cascading
 func DeleteSession(db sqlx.Ext, id string) error {
-	r, err := db.Exec("DELETE FROM user_session WHERE user_session_id = ?", id)
+	r, err := db.Exec(db.Rebind("DELETE FROM user_session WHERE user_session_id = ?"), id)
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func DeleteSession(db sqlx.Ext, id string) error {
 // DeleteExpiredSessions purges expired sessions from database
 func DeleteExpiredSessions(db sqlx.Ext) error {
 	now := time.Now().UTC()
-	_, err := db.Exec("DELETE FROM user_session WHERE expires_on <= ?", now)
+	_, err := db.Exec(db.Rebind("DELETE FROM user_session WHERE expires_on <= ?"), now)
 	return err
 }
 
@@ -135,9 +135,9 @@ func FindAllSessions(db sqlx.Ext, pager entities.Pager, sorter entities.Sorter) 
 			d.domain_id AS domain_pk, d.object_id AS domain_id, d.name AS domain_name, d.is_enabled AS domain_enabled,
 			u.user_id AS user_pk, u.object_id AS user_id, u.name AS user_name, u.is_enabled AS user_enabled
 		FROM user_session AS s
-        LEFT JOIN user AS u ON s.user_id=u.user_id
+        LEFT JOIN %v AS u ON s.user_id=u.user_id
         LEFT JOIN domain AS d ON d.domain_id=s.domain_id
-        %v %v;`, orderByClause(sorter, "s"), limitOffset(pager))
+        %v %v;`, escapeLiteral(db, "user"), orderByClause(sorter, "s"), limitOffset(pager))
 	rows, err := db.Queryx(q)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
@@ -162,15 +162,15 @@ func FindAllSessions(db sqlx.Ext, pager entities.Pager, sorter entities.Sorter) 
 // FindSession finds a session by given session ID
 func FindSession(db sqlx.Ext, id string) (*Session, error) {
 	var s Session
-	q := `SELECT s.*,
+	q := fmt.Sprintf(`SELECT s.*,
 			d.domain_id AS domain_pk, d.object_id AS domain_id, d.name AS domain_name, d.is_enabled AS domain_enabled,
 			u.user_id AS user_pk, u.object_id AS user_id, u.name AS user_name, u.is_enabled AS user_enabled
 		FROM user_session AS s
-        LEFT JOIN user AS u ON s.user_id=u.user_id
+        LEFT JOIN %v AS u ON s.user_id=u.user_id
         LEFT JOIN domain AS d ON d.domain_id=s.domain_id
         WHERE s.user_session_id = ?
-        LIMIT 1;`
-	err := db.QueryRowx(q, id).StructScan(&s)
+        LIMIT 1;`, escapeLiteral(db, "user"))
+	err := db.QueryRowx(db.Rebind(q), id).StructScan(&s)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	} else if err != nil {
@@ -182,15 +182,15 @@ func FindSession(db sqlx.Ext, id string) (*Session, error) {
 // FindSpecificSession finds a session by given session ID, user agent and remote address
 func FindSpecificSession(db sqlx.Ext, id string, userAgent, remoteAddr string) (*Session, error) {
 	var s Session
-	q := `SELECT s.*,
+	q := fmt.Sprintf(`SELECT s.*,
 			d.domain_id AS domain_pk, d.object_id AS domain_id, d.name AS domain_name, d.is_enabled AS domain_enabled,
 			u.user_id AS user_pk, u.object_id AS user_id, u.name AS user_name, u.is_enabled AS user_enabled
 		FROM user_session AS s
-        LEFT JOIN user AS u ON s.user_id=u.user_id
+        LEFT JOIN %v AS u ON s.user_id=u.user_id
         LEFT JOIN domain AS d ON d.domain_id=s.domain_id
         WHERE s.user_session_id = ? AND s.user_agent = ? AND s.remote_addr = ?
-        LIMIT 1;`
-	err := db.QueryRowx(q, id, userAgent, remoteAddr).StructScan(&s)
+        LIMIT 1;`, escapeLiteral(db, "user"))
+	err := db.QueryRowx(db.Rebind(q), id, userAgent, remoteAddr).StructScan(&s)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	} else if err != nil {

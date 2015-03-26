@@ -45,7 +45,7 @@ func SaveDomain(db sqlx.Ext, d Domain) (*Domain, error) {
 		f.Enabled = d.Enabled
 		q = `UPDATE domain SET name=?, description=?, is_enabled=?, updated_on=?
 				WHERE domain_id = ?;`
-		_, err = db.Exec(q, f.Name, f.Description, f.Enabled, f.UpdatedOn, f.PK)
+		_, err = db.Exec(db.Rebind(q), f.Name, f.Description, f.Enabled, f.UpdatedOn, f.PK)
 		if err != nil {
 			return nil, err
 		}
@@ -56,11 +56,11 @@ func SaveDomain(db sqlx.Ext, d Domain) (*Domain, error) {
 	d.UpdatedOn = now
 	q = `INSERT INTO domain (object_id, name, description, is_enabled, created_on, updated_on)
 		VALUES (?, ?, ?, ?, ?, ?);`
-	r, err = db.Exec(q, d.ID, d.Name, d.Description, d.Enabled, d.CreatedOn, d.UpdatedOn)
+	r, err = db.Exec(db.Rebind(q), d.ID, d.Name, d.Description, d.Enabled, d.CreatedOn, d.UpdatedOn)
 	if err != nil {
 		return nil, err
 	}
-	d.PK, err = r.LastInsertId()
+	d.PK, err = lastInsertID(db, r, "domain", "domain_id")
 	if err != nil {
 		return nil, err
 	}
@@ -70,22 +70,22 @@ func SaveDomain(db sqlx.Ext, d Domain) (*Domain, error) {
 // DeleteDomain deletes a domain from database cascading
 func DeleteDomain(db sqlx.Ext, id string) error {
 	var pk int64
-	err := db.QueryRowx("SELECT domain_id FROM domain WHERE object_id = ?", id).Scan(&pk)
+	err := db.QueryRowx(db.Rebind("SELECT domain_id FROM domain WHERE object_id = ?"), id).Scan(&pk)
 	if err == sql.ErrNoRows {
 		return ErrNotFound
 	} else if err != nil {
 		return err
 	}
 	err = ExecuteTransactionally(db.(*sqlx.DB), func(ext sqlx.Ext) error {
-		r, err := ext.Exec("DELETE FROM user_session WHERE domain_id = ?;", pk)
+		r, err := ext.Exec(db.Rebind("DELETE FROM user_session WHERE domain_id = ?;"), pk)
 		if err != nil {
 			return err
 		}
-		r, err = ext.Exec("DELETE FROM domain_user WHERE domain_id = ?;", pk)
+		r, err = ext.Exec(db.Rebind("DELETE FROM domain_user WHERE domain_id = ?;"), pk)
 		if err != nil {
 			return err
 		}
-		r, err = ext.Exec("DELETE FROM domain WHERE domain_id = ?", pk)
+		r, err = ext.Exec(db.Rebind("DELETE FROM domain WHERE domain_id = ?"), pk)
 		if err != nil {
 			return err
 		}
@@ -114,8 +114,8 @@ func CountDomains(db sqlx.Ext) (int64, error) {
 // CountDomainsByUser returns a total count of domain records belonging to a given user
 func CountDomainsByUser(db sqlx.Ext, id string) (int64, error) {
 	var count int64
-	err := db.QueryRowx(`SELECT count(*) FROM domain_user WHERE user_id IN
-		(SELECT user_id FROM user WHERE object_id = ?);`, id).Scan(&count)
+	err := db.QueryRowx(db.Rebind(fmt.Sprintf(`SELECT count(*) FROM domain_user WHERE user_id IN
+		(SELECT user_id FROM %v WHERE object_id = ?);`, escapeLiteral(db, "user"))), id).Scan(&count)
 	if err != nil {
 		return -1, err
 	}
@@ -154,11 +154,11 @@ func FindDomainsByUser(db *sqlx.DB, userID string, pager entities.Pager, sorter 
 		LEFT JOIN domain_user AS du ON d.domain_id = du.domain_id
 		WHERE d.domain_id IN (
 			SELECT DISTINCT domain_id FROM domain_user WHERE user_id
-				IN (SELECT user_id FROM user WHERE object_id = ?)
+				IN (SELECT user_id FROM %v WHERE object_id = ?)
 		)
 		GROUP BY d.domain_id
-		%v %v;`, orderByClause(sorter, "d"), limitOffset(pager))
-	rows, err := db.Queryx(q, userID)
+		%v %v;`, escapeLiteral(db, "user"), orderByClause(sorter, "d"), limitOffset(pager))
+	rows, err := db.Queryx(db.Rebind(q), userID)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	} else if err != nil {
@@ -181,7 +181,7 @@ func FindDomainsByUser(db *sqlx.DB, userID string, pager entities.Pager, sorter 
 // FindDomain finds a domain by given domain ID
 func FindDomain(db sqlx.Ext, id string) (*Domain, error) {
 	var d Domain
-	err := db.QueryRowx("SELECT * FROM domain WHERE object_id = ? LIMIT 1", id).StructScan(&d)
+	err := db.QueryRowx(db.Rebind("SELECT * FROM domain WHERE object_id = ? LIMIT 1"), id).StructScan(&d)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	} else if err != nil {
@@ -193,7 +193,7 @@ func FindDomain(db sqlx.Ext, id string) (*Domain, error) {
 // FindDomainByName finds a domain by given domain name
 func FindDomainByName(db sqlx.Ext, name string) (*Domain, error) {
 	var d Domain
-	err := db.QueryRowx("SELECT * FROM domain WHERE name = ? LIMIT 1", name).StructScan(&d)
+	err := db.QueryRowx(db.Rebind("SELECT * FROM domain WHERE name = ? LIMIT 1"), name).StructScan(&d)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	} else if err != nil {

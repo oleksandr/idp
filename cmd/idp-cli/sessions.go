@@ -58,6 +58,13 @@ func findSession(c *cli.Context) {
 }
 
 func addSession(c *cli.Context) {
+	if c.String("user") == "" {
+		assertError(fmt.Errorf("You need to specify user ID using --user option"))
+	}
+	if c.String("domain") == "" {
+		assertError(fmt.Errorf("You need to specify domain ID using --domain option"))
+	}
+
 	user, err := userInteractor.Find(c.String("user"))
 	assertError(err)
 

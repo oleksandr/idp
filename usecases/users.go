@@ -49,25 +49,29 @@ func (inter *UserInteractorImpl) Create(user entities.BasicUser, domainIDs []str
 		}
 		domains = append(domains, found)
 	}
-	// Create user and assign to provided domains
+	// Create a user
+	u := dl.User{
+		ID:       user.ID,
+		Name:     user.Name,
+		Password: user.Password,
+		Enabled:  user.Enabled,
+	}
+	created, err := dl.SaveUser(inter.DB, u)
+	if err != nil {
+		return err
+	}
 	err = dl.ExecuteTransactionally(inter.DB, func(ext sqlx.Ext) error {
-		// Create a user
-		u := dl.User{
-			ID:       user.ID,
-			Name:     user.Name,
-			Password: user.Password,
-			Enabled:  user.Enabled,
-		}
-		created, err := dl.SaveUser(ext, u)
-		if err != nil {
-			return err
-		}
-		// Assign user to domains
 		for _, d := range domains {
-			dl.AddUserToDomain(ext, created.ID, d.ID)
+			err = dl.AddUserToDomain(ext, created.ID, d.ID)
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	})
+	if err != nil {
+		dl.DeleteUser(inter.DB, created.ID)
+	}
 	return err
 }
 
