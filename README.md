@@ -10,13 +10,15 @@ The package contains 2 commands (executables):
  * `idp-api` - a server that exposes functionality via RESTful API (for the moment)
 
 
-## Database support
+## Database support & data model
 
 Currently the Simple IdP supports the following RDBMS via standard Go's `database/sql` interface:
 
  * SQLite3 (http://github.com/mattn/go-sqlite3)
  * PostgreSQL (http://github.com/lib/pq)
  * MySQL (http://github.com/go-sql-driver/mysql)
+
+You can find SQL script for your RDBMS to create IdP's database structure in the `sql` folder of the package.
 
 
 ## Building
