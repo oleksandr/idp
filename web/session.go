@@ -41,25 +41,27 @@ type SessionWebHandler struct {
 
 // Create opens a new session if none exists
 func (handler *SessionWebHandler) Create(w http.ResponseWriter, r *http.Request) {
-	// Check existing session
-	if current := context.Get(r, config.CtxSessionKey); current != nil {
-		session, ok := current.(entities.Session)
-		if !ok {
-			respondWithError(w, http.StatusInternalServerError, "Session error", "Failed to read current session data")
-			return
+	/*
+		// Check existing session
+		if current := context.Get(r, config.CtxSessionKey); current != nil {
+			session, ok := current.(entities.Session)
+			if !ok {
+				respondWithError(w, http.StatusInternalServerError, "Session error", "Failed to read current session data")
+				return
+			}
+			if !session.IsExpired() {
+				//TODO: put the proper location header
+				//w.Header().Set("Location", "/")
+				w.WriteHeader(http.StatusFound)
+				return
+			}
+			err := handler.SessionInteractor.Delete(session)
+			if err != nil {
+				respondWithError(w, http.StatusInternalServerError, "Failed to delete session", err.Error())
+				return
+			}
 		}
-		if !session.IsExpired() {
-			//TODO: put the proper location header
-			//w.Header().Set("Location", "/")
-			w.WriteHeader(http.StatusFound)
-			return
-		}
-		err := handler.SessionInteractor.Delete(session)
-		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, "Failed to delete session", err.Error())
-			return
-		}
-	}
+	*/
 
 	// Parse incoming credentials
 	var form SessionForm
@@ -92,11 +94,20 @@ func (handler *SessionWebHandler) Create(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusBadRequest, "Failed to create session", "Incorrect name/password")
 		return
 	}
-
-	// Create new session
 	userAgent := r.UserAgent()
 	remoteAddr := helpers.RemoteAddrFromRequest(r)
-	session := entities.NewSession(*user, *domain, userAgent, remoteAddr)
+
+	// Lookup existing session
+	session, err := handler.SessionInteractor.FindUserSpecific(user.ID, domain.ID, userAgent, remoteAddr)
+	if session != nil && !session.IsExpired() {
+		handler.SessionInteractor.Retain(*session)
+		w.WriteHeader(http.StatusFound)
+		json.NewEncoder(w).Encode(SessionResource{Session: *session})
+		return
+	}
+
+	// Create new session
+	session = entities.NewSession(*user, *domain, userAgent, remoteAddr)
 	err = handler.SessionInteractor.Create(*session)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Failed to create session", err.Error())

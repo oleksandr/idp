@@ -179,8 +179,8 @@ func FindSession(db sqlx.Ext, id string) (*Session, error) {
 	return &s, nil
 }
 
-// FindSpecificSession finds a session by given session ID, user agent and remote address
-func FindSpecificSession(db sqlx.Ext, id string, userAgent, remoteAddr string) (*Session, error) {
+// FindUserSpecificSession finds a session by given session ID, user agent and remote address
+func FindUserSpecificSession(db sqlx.Ext, userID, domainID string, userAgent, remoteAddr string) (*Session, error) {
 	var s Session
 	q := fmt.Sprintf(`SELECT s.*,
 			d.domain_id AS domain_pk, d.object_id AS domain_id, d.name AS domain_name, d.is_enabled AS domain_enabled,
@@ -188,9 +188,11 @@ func FindSpecificSession(db sqlx.Ext, id string, userAgent, remoteAddr string) (
 		FROM user_session AS s
         LEFT JOIN %v AS u ON s.user_id=u.user_id
         LEFT JOIN domain AS d ON d.domain_id=s.domain_id
-        WHERE s.user_session_id = ? AND s.user_agent = ? AND s.remote_addr = ?
+        WHERE u.object_id = ? AND d.object_id = ? AND s.user_agent = ? AND s.remote_addr = ?
+        AND s.expires_on > ?
         LIMIT 1;`, escapeLiteral(db, "user"))
-	err := db.QueryRowx(db.Rebind(q), id, userAgent, remoteAddr).StructScan(&s)
+	now := time.Now().UTC()
+	err := db.QueryRowx(db.Rebind(q), userID, domainID, userAgent, remoteAddr, now).StructScan(&s)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	} else if err != nil {

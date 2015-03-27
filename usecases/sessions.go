@@ -20,7 +20,7 @@ type SessionInteractor interface {
 	Delete(session entities.Session) error
 	Purge() error
 	Find(id string) (*entities.Session, error)
-	FindSpecific(id, userAgent, remoteAddr string) (*entities.Session, error)
+	FindUserSpecific(userID, domainID, userAgent, remoteAddr string) (*entities.Session, error)
 	List(pager entities.Pager, sorter entities.Sorter) (*entities.SessionCollection, error)
 }
 
@@ -96,9 +96,9 @@ func (inter *SessionInteractorImpl) Find(id string) (*entities.Session, error) {
 	return sessionRecordToEntity(r), nil
 }
 
-// FindSpecific looks for a session by given session ID, user agent and remote address
-func (inter *SessionInteractorImpl) FindSpecific(id, userAgent, remoteAddr string) (*entities.Session, error) {
-	r, err := dl.FindSpecificSession(inter.DB, id, userAgent, remoteAddr)
+// FindUserSpecific looks for a session by given session ID, user agent and remote address
+func (inter *SessionInteractorImpl) FindUserSpecific(userID, domainID, userAgent, remoteAddr string) (*entities.Session, error) {
+	r, err := dl.FindUserSpecificSession(inter.DB, userID, domainID, userAgent, remoteAddr)
 	if err != nil {
 		return nil, err
 	}

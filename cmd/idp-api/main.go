@@ -145,7 +145,6 @@ func main() {
 	}()
 
 	go func() {
-		log.Println("Started expired sessions cleaning routine...")
 		for {
 			select {
 			case <-time.Tick(time.Duration(30) * time.Minute):

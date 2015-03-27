@@ -38,8 +38,8 @@ func NewAuthenticationHandler(interactor usecases.SessionInteractor) func(next h
 			// Look up the session by token and other attributes
 			remoteAddr := helpers.RemoteAddrFromRequest(r)
 			userAgent := r.UserAgent()
-			session, err := interactor.FindSpecific(authToken, userAgent, remoteAddr)
-			if err != nil {
+			session, err := interactor.Find(authToken)
+			if err != nil || session.UserAgent != userAgent || session.RemoteAddr != remoteAddr {
 				respondWithError(w, http.StatusUnauthorized, "Unauthorized", "Session not found")
 				return
 			}
