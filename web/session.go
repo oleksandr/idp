@@ -45,7 +45,7 @@ func (handler *SessionWebHandler) Create(w http.ResponseWriter, r *http.Request)
 	var form SessionForm
 	err := json.NewDecoder(r.Body).Decode(&form)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Failed to create session", err.Error())
+		respondWithError(w, http.StatusBadRequest, "Failed to decode request data", err.Error())
 		return
 	}
 
