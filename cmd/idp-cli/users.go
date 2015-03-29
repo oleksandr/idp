@@ -124,7 +124,7 @@ func removeUser(c *cli.Context) {
 	u, err := userInteractor.Find(c.Args().First())
 	assertError(err)
 
-	err = userInteractor.Delete(*u)
+	err = userInteractor.Delete(u.ID)
 	assertError(err)
 
 	fmt.Printf("User %v deleted\n", u.ID)

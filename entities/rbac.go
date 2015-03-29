@@ -35,12 +35,12 @@ func NewBasicRole(name, description string) *BasicRole {
 
 // BasicPermissionCollection is a paginated collection of BasicPermission entities
 type BasicPermissionCollection struct {
-	Permissions []*BasicPermission `json:"permissions"`
-	Paginator   *Paginator         `json:"paginator"`
+	Permissions []BasicPermission `json:"permissions"`
+	Paginator   Paginator         `json:"paginator"`
 }
 
 // BasicRoleCollection is a paginated collection of BasicRole entities
 type BasicRoleCollection struct {
-	Roles     []*BasicRole `json:"roles"`
-	Paginator *Paginator   `json:"paginator"`
+	Roles     []BasicRole `json:"roles"`
+	Paginator Paginator   `json:"paginator"`
 }

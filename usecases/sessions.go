@@ -6,8 +6,10 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/oleksandr/idp/config"
+	"github.com/oleksandr/idp/db"
 	"github.com/oleksandr/idp/dl"
 	"github.com/oleksandr/idp/entities"
+	"gopkg.in/gorp.v1"
 )
 
 //
@@ -26,7 +28,8 @@ type SessionInteractor interface {
 
 // SessionInteractorImpl is an actual interactor that implements SessionInteractor
 type SessionInteractorImpl struct {
-	DB *sqlx.DB
+	DB    *sqlx.DB
+	DBMap *gorp.DbMap
 }
 
 // Create open a new session
@@ -47,7 +50,8 @@ func (inter *SessionInteractorImpl) Create(session entities.Session) error {
 	if err != nil {
 		return fmt.Errorf("Could not find user in domain: %v", err.Error())
 	}
-	s := dl.Session{
+
+	d := &db.Session{
 		ID:         session.ID,
 		UserAgent:  session.UserAgent,
 		RemoteAddr: session.RemoteAddr,
@@ -55,7 +59,7 @@ func (inter *SessionInteractorImpl) Create(session entities.Session) error {
 		DomainID:   session.Domain.ID,
 		UserID:     session.User.ID,
 	}
-	_, err = dl.CreateSession(inter.DB, s)
+	err = inter.DBMap.Insert(d)
 	if err != nil {
 		return err
 	}

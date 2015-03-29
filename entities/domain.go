@@ -42,12 +42,12 @@ func (d *BasicDomain) IsValid() (bool, error) {
 
 // BasicDomainCollection is a paginated collection of Domain entities
 type BasicDomainCollection struct {
-	Domains   []*BasicDomain `json:"domains"`
-	Paginator *Paginator     `json:"paginator"`
+	Domains   []BasicDomain `json:"domains"`
+	Paginator Paginator     `json:"paginator"`
 }
 
 // DomainCollection is a paginated collection of Domain entities
 type DomainCollection struct {
-	Domains   []*Domain  `json:"domains"`
-	Paginator *Paginator `json:"paginator"`
+	Domains   []Domain  `json:"domains"`
+	Paginator Paginator `json:"paginator"`
 }

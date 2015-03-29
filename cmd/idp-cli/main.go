@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/codegangsta/cli"
@@ -10,11 +11,15 @@ import (
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/oleksandr/idp/config"
+	"github.com/oleksandr/idp/db"
 	"github.com/oleksandr/idp/usecases"
+	"gopkg.in/gorp.v1"
 )
 
 var (
-	db                *sqlx.DB
+	db1               *sqlx.DB
+	dbmap             *gorp.DbMap
+	err               error
 	domainInteractor  *usecases.DomainInteractorImpl
 	userInteractor    *usecases.UserInteractorImpl
 	rbacInteractor    *usecases.RBACInteractorImpl
@@ -30,20 +35,60 @@ func main() {
 	app.Email = "alexander.lobunets@gmail.com"
 
 	// DB
-	db := sqlx.MustConnect(os.Getenv(config.EnvIDPDriver), os.Getenv(config.EnvIDPDSN))
-	defer db.Close()
+	db1 = sqlx.MustConnect(os.Getenv(config.EnvIDPDriver), os.Getenv(config.EnvIDPDSN))
+	defer db1.Close()
+
+	dbmap, err = db.InitDB(os.Getenv(config.EnvIDPDriver), os.Getenv(config.EnvIDPDSN))
+	assertError(err)
+	defer dbmap.Db.Close()
+	dbmap.TraceOn("[gorp]", log.New(os.Stderr, "", log.Lmicroseconds))
 
 	// Interactors
 	domainInteractor = new(usecases.DomainInteractorImpl)
-	domainInteractor.DB = db
+	domainInteractor.DBMap = dbmap
 	userInteractor = new(usecases.UserInteractorImpl)
-	userInteractor.DB = db
+	userInteractor.DBMap = dbmap
 	sessionInteractor = new(usecases.SessionInteractorImpl)
-	sessionInteractor.DB = db
+	sessionInteractor.DB = db1
+	sessionInteractor.DBMap = dbmap
 	rbacInteractor = new(usecases.RBACInteractorImpl)
-	rbacInteractor.DB = db
+	rbacInteractor.DB = db1
+	rbacInteractor.DBMap = dbmap
 
 	app.Commands = []cli.Command{
+		{
+			Name:  "db",
+			Usage: "Manage database",
+			Subcommands: []cli.Command{
+				{
+					Name:   "truncate",
+					Usage:  "Truncates all tables",
+					Action: truncateTables,
+					Flags: []cli.Flag{
+						cli.BoolFlag{
+							Name:  "please",
+							Usage: "Ask nicely",
+						},
+					},
+				},
+				{
+					Name:   "drop",
+					Usage:  "Drops all tables",
+					Action: dropTables,
+					Flags: []cli.Flag{
+						cli.BoolFlag{
+							Name:  "please",
+							Usage: "Ask nicely",
+						},
+					},
+				},
+				{
+					Name:   "create",
+					Usage:  "Creates all tables",
+					Action: createTables,
+				},
+			},
+		},
 		{
 			Name:  "domains",
 			Usage: "Manage domains",

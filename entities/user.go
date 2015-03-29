@@ -62,12 +62,12 @@ func passwordHash(s string) string {
 
 // BasicUserCollection is a paginated collection of User entities
 type BasicUserCollection struct {
-	Users     []*BasicUser `json:"users"`
-	Paginator *Paginator   `json:"paginator"`
+	Users     []BasicUser `json:"users"`
+	Paginator Paginator   `json:"paginator"`
 }
 
 // UserCollection is a paginated collection of User entities
 type UserCollection struct {
-	Users     []*User    `json:"users"`
-	Paginator *Paginator `json:"paginator"`
+	Users     []User    `json:"users"`
+	Paginator Paginator `json:"paginator"`
 }

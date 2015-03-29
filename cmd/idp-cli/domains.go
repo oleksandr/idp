@@ -111,7 +111,7 @@ func removeDomain(c *cli.Context) {
 	d, err := domainInteractor.Find(c.Args().First())
 	assertError(err)
 
-	err = domainInteractor.Delete(*d)
+	err = domainInteractor.Delete(d.ID)
 	assertError(err)
 
 	fmt.Printf("Domain %v deleted\n", d.ID)

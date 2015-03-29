@@ -1,9 +1,9 @@
 #!/bin/bash -e
 
 # Reset DB
-#rm -rf db.sqlite3 && sqlite3 db.sqlite3 < db/sqlite3.sql
-#psql -f db/postgres.sql idp_dev
-mysql -u root idp_dev < db/mysql.sql
+#rm -rf db.sqlite3 && sqlite3 db.sqlite3 < sql/sqlite3.sql
+#psql -f sql/postgres.sql idp_dev
+mysql -u root idp_dev < sql/mysql.sql
 
 #
 # Environment
