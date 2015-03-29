@@ -15,7 +15,7 @@ import (
 	"github.com/gorilla/context"
 	"github.com/justinas/alice"
 	//_ "github.com/lib/pq"  # <-- need more testing
-	_ "github.com/mattn/go-sqlite3"
+	//_ "github.com/mattn/go-sqlite3"  # <-- temporary disabled. need more testing
 	"github.com/oleksandr/idp/config"
 	"github.com/oleksandr/idp/db"
 	"github.com/oleksandr/idp/usecases"
