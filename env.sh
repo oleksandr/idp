@@ -11,15 +11,14 @@ export IDP_SECRET_SALT="842d7e1244b98f667f271a4e4d289772"
 export IDP_SQL_TRACE=true
 
 # MySQL
-#export IDP_DB_Driver="mysql"
-#export IDP_DB_DSN="root:@tcp(localhost:3306)/idp_dev?parseTime=true"
-
-# Uncomment below for PostgreSQL
-export IDP_DB_Driver="postgres"
-export IDP_DB_DSN="postgres://alex:@localhost/idp_dev?sslmode=disable"
+export IDP_DB_Driver="mysql"
+export IDP_DB_DSN="root:@tcp(localhost:3306)/idp_dev?parseTime=true"
 
 # Uncomment below for SQLite3
 #export IDP_DB_Driver="sqlite3"
 #export IDP_DB_DSN="/Users/alex/src/github.com/oleksandr/idp/db.sqlite3"
 
-
+# NOT SUPPORTED FOR NOW
+# Uncomment below for PostgreSQL
+#export IDP_DB_Driver="postgres"
+#export IDP_DB_DSN="postgres://alex:@localhost/idp_dev?sslmode=disable"

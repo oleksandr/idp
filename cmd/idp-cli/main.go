@@ -7,7 +7,7 @@ import (
 
 	"github.com/codegangsta/cli"
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/lib/pq"
+	//_ "github.com/lib/pq"  # <-- need more testing
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/oleksandr/idp/config"
 	"github.com/oleksandr/idp/db"

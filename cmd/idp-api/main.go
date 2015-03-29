@@ -14,7 +14,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/context"
 	"github.com/justinas/alice"
-	_ "github.com/lib/pq"
+	//_ "github.com/lib/pq"  # <-- need more testing
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/oleksandr/idp/config"
 	"github.com/oleksandr/idp/db"

@@ -46,7 +46,7 @@ func (inter *UserInteractorImpl) Create(user entities.BasicUser, domainIDs []str
 	)
 
 	for _, id := range domainIDs {
-		pk, err = inter.DBMap.SelectInt("SELECT domain_id FROM domain WHERE object_id = ?", id)
+		pk, err = inter.DBMap.SelectInt("SELECT domain_id FROM domain WHERE object_id = ?;", id)
 		if err != nil {
 			return err
 		}
