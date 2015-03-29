@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/oleksandr/idp/db"
 	"github.com/oleksandr/idp/entities"
 	"gopkg.in/gorp.v1"
@@ -29,7 +28,6 @@ type RBACInteractor interface {
 
 // RBACInteractorImpl is an actual interactor that implements RBACInteractor
 type RBACInteractorImpl struct {
-	DB    *sqlx.DB
 	DBMap *gorp.DbMap
 }
 
@@ -209,6 +207,7 @@ func (inter *RBACInteractorImpl) UpdateRoleWithPermissions(roleName string, perm
 		pk   int64
 		pp   []int64
 		rTbl = inter.DBMap.Dialect.QuotedTableForQuery("", "role")
+		pTbl = inter.DBMap.Dialect.QuotedTableForQuery("", "permission")
 	)
 	err = inter.DBMap.SelectOne(&r, fmt.Sprintf("SELECT * FROM %v WHERE name = ?", rTbl), roleName)
 	if err == sql.ErrNoRows {
@@ -218,7 +217,7 @@ func (inter *RBACInteractorImpl) UpdateRoleWithPermissions(roleName string, perm
 	}
 
 	for _, name := range permissions {
-		pk, err = inter.DBMap.SelectInt(fmt.Sprintf("SELECT permission_id FROM %v WHERE name = ?", rTbl), name)
+		pk, err = inter.DBMap.SelectInt(fmt.Sprintf("SELECT permission_id FROM %v WHERE name = ?", pTbl), name)
 		if err != nil {
 			return err
 		}
@@ -258,6 +257,7 @@ func (inter *RBACInteractorImpl) RemovePermissionsFromRole(permissions []string,
 		pk   int64
 		pp   []int64
 		rTbl = inter.DBMap.Dialect.QuotedTableForQuery("", "role")
+		pTbl = inter.DBMap.Dialect.QuotedTableForQuery("", "permission")
 	)
 	err = inter.DBMap.SelectOne(&r, fmt.Sprintf("SELECT * FROM %v WHERE name = ?", rTbl), roleName)
 	if err == sql.ErrNoRows {
@@ -267,7 +267,7 @@ func (inter *RBACInteractorImpl) RemovePermissionsFromRole(permissions []string,
 	}
 
 	for _, name := range permissions {
-		pk, err = inter.DBMap.SelectInt(fmt.Sprintf("SELECT permission_id FROM %v WHERE name = ?", rTbl), name)
+		pk, err = inter.DBMap.SelectInt(fmt.Sprintf("SELECT permission_id FROM %v WHERE name = ?", pTbl), name)
 		if err != nil {
 			return err
 		}

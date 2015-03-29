@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/oleksandr/idp/db"
 	"github.com/oleksandr/idp/entities"
 	"gopkg.in/gorp.v1"
@@ -28,7 +27,6 @@ type DomainInteractor interface {
 
 // DomainInteractorImpl is an actual interactor that implements DomainInteractor
 type DomainInteractorImpl struct {
-	DB    *sqlx.DB
 	DBMap *gorp.DbMap
 }
 

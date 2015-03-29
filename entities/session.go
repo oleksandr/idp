@@ -52,6 +52,6 @@ func (s *Session) IsExpired() bool {
 // SessionCollection is a paginated collection of Session entities
 //
 type SessionCollection struct {
-	Sessions  []*Session `json:"sessions"`
-	Paginator *Paginator `json:"paginator"`
+	Sessions  []Session `json:"sessions"`
+	Paginator Paginator `json:"paginator"`
 }

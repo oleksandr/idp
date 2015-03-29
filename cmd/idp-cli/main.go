@@ -7,7 +7,6 @@ import (
 
 	"github.com/codegangsta/cli"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/oleksandr/idp/config"
@@ -17,7 +16,6 @@ import (
 )
 
 var (
-	db1               *sqlx.DB
 	dbmap             *gorp.DbMap
 	err               error
 	domainInteractor  *usecases.DomainInteractorImpl
@@ -35,13 +33,12 @@ func main() {
 	app.Email = "alexander.lobunets@gmail.com"
 
 	// DB
-	db1 = sqlx.MustConnect(os.Getenv(config.EnvIDPDriver), os.Getenv(config.EnvIDPDSN))
-	defer db1.Close()
-
 	dbmap, err = db.InitDB(os.Getenv(config.EnvIDPDriver), os.Getenv(config.EnvIDPDSN))
 	assertError(err)
 	defer dbmap.Db.Close()
-	dbmap.TraceOn("[gorp]", log.New(os.Stderr, "", log.Lmicroseconds))
+	if config.SQLTraceOn() {
+		dbmap.TraceOn("[gorp]", log.New(os.Stderr, "", log.LstdFlags))
+	}
 
 	// Interactors
 	domainInteractor = new(usecases.DomainInteractorImpl)
@@ -49,10 +46,8 @@ func main() {
 	userInteractor = new(usecases.UserInteractorImpl)
 	userInteractor.DBMap = dbmap
 	sessionInteractor = new(usecases.SessionInteractorImpl)
-	sessionInteractor.DB = db1
 	sessionInteractor.DBMap = dbmap
 	rbacInteractor = new(usecases.RBACInteractorImpl)
-	rbacInteractor.DB = db1
 	rbacInteractor.DBMap = dbmap
 
 	app.Commands = []cli.Command{

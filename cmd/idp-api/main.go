@@ -13,11 +13,11 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/context"
-	"github.com/jmoiron/sqlx"
 	"github.com/justinas/alice"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/oleksandr/idp/config"
+	"github.com/oleksandr/idp/db"
 	"github.com/oleksandr/idp/usecases"
 	"github.com/oleksandr/idp/web"
 )
@@ -28,8 +28,14 @@ func main() {
 	if addr == "" {
 		addr = ":8000"
 	}
-	db := sqlx.MustConnect(os.Getenv(config.EnvIDPDriver), os.Getenv(config.EnvIDPDSN))
-	defer db.Close()
+	dbmap, err := db.InitDB(os.Getenv(config.EnvIDPDriver), os.Getenv(config.EnvIDPDSN))
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	defer dbmap.Db.Close()
+	if config.SQLTraceOn() {
+		dbmap.TraceOn("[gorp]", log.New(os.Stderr, "", log.LstdFlags))
+	}
 
 	//
 	// Core setup
@@ -37,11 +43,11 @@ func main() {
 
 	// Interactors
 	domainInteractor := new(usecases.DomainInteractorImpl)
-	domainInteractor.DB = db
+	domainInteractor.DBMap = dbmap
 	userInteractor := new(usecases.UserInteractorImpl)
-	userInteractor.DB = db
+	userInteractor.DBMap = dbmap
 	sessionInteractor := new(usecases.SessionInteractorImpl)
-	sessionInteractor.DB = db
+	sessionInteractor.DBMap = dbmap
 
 	// Web handlers
 	//domainHandler := new(web.DomainWebHandler)

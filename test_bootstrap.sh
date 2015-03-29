@@ -3,7 +3,9 @@
 # Reset DB
 #rm -rf db.sqlite3 && sqlite3 db.sqlite3 < sql/sqlite3.sql
 #psql -f sql/postgres.sql idp_dev
-mysql -u root idp_dev < sql/mysql.sql
+#mysql -u root idp_dev < sql/mysql.sql
+idp-cli db drop --please
+idp-cli db create
 
 #
 # Environment

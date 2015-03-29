@@ -16,6 +16,8 @@ const (
 	EnvIDPSessionTTL = "IDP_SESSION_TTL"
 	// EnvIDPSecretSalt environment variable
 	EnvIDPSecretSalt = "IDP_SECRET_SALT"
+	// EnvIDPSQLTrace environment variable
+	EnvIDPSQLTrace = "IDP_SQL_TRACE"
 
 	// CtxParamsKey key to store router's params
 	CtxParamsKey = "params"

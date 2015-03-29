@@ -3,10 +3,8 @@ package usecases
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/oleksandr/idp/db"
 	"github.com/oleksandr/idp/entities"
 	"gopkg.in/gorp.v1"
@@ -32,7 +30,6 @@ type UserInteractor interface {
 
 // UserInteractorImpl is an actual interactor that implements UserInteractor
 type UserInteractorImpl struct {
-	DB    *sqlx.DB
 	DBMap *gorp.DbMap
 }
 
@@ -369,7 +366,6 @@ func (inter *UserInteractorImpl) List(pager entities.Pager, sorter entities.Sort
 	if err != nil {
 		return nil, err
 	}
-	log.Println(records)
 	c := &entities.UserCollection{
 		Users:     []entities.User{},
 		Paginator: *pager.CreatePaginator(len(records), total),
@@ -411,8 +407,8 @@ func (inter *UserInteractorImpl) ListByDomain(domainID string, pager entities.Pa
 
 func userToEntity(u *db.User) *entities.BasicUser {
 	e := entities.NewBasicUser(u.Name)
-	u.ID = u.ID
-	u.Password = u.Password
-	u.Enabled = u.Enabled
+	e.ID = u.ID
+	e.Password = u.Password
+	e.Enabled = u.Enabled
 	return e
 }
