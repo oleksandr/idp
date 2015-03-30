@@ -54,6 +54,7 @@ func (handler *SessionWebHandler) Create(w http.ResponseWriter, r *http.Request)
 		domain *entities.BasicDomain
 		user   *entities.BasicUser
 	)
+
 	if form.Session.Domain.ID != "" {
 		domain, err = handler.DomainInteractor.Find(form.Session.Domain.ID)
 	} else {
@@ -62,16 +63,24 @@ func (handler *SessionWebHandler) Create(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Failed to create session", err.Error())
 		return
+	} else if !domain.Enabled {
+		respondWithError(w, http.StatusForbidden, "Failed to create session", "Domain is disabled")
+		return
 	}
+
 	user, err = handler.UserInteractor.FindByNameInDomain(form.Session.User.Name, domain.ID)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Failed to create session", err.Error())
+		return
+	} else if !user.Enabled {
+		respondWithError(w, http.StatusForbidden, "Failed to create session", "User is disabled")
 		return
 	}
 	if !user.IsPassword(form.Session.User.Password) {
 		respondWithError(w, http.StatusBadRequest, "Failed to create session", "Incorrect name/password")
 		return
 	}
+
 	userAgent := r.UserAgent()
 	remoteAddr := helpers.RemoteAddrFromRequest(r)
 

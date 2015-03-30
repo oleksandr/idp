@@ -69,7 +69,7 @@ func InitDB(driverName, DSN string) (*gorp.DbMap, error) {
 	return dbmap, nil
 }
 
-// Takes a Sorter and constructs a "ORDER BY" clause if required
+// OrderByClause takes a Sorter and constructs a "ORDER BY" clause if required
 func OrderByClause(sorter entities.Sorter, alias string) string {
 	clause := ""
 	prefix := ""
@@ -86,7 +86,7 @@ func OrderByClause(sorter entities.Sorter, alias string) string {
 	return clause
 }
 
-// Takes a pager and returns a "LIMIT/OFFSET" clause if required
+// LimitOffset takes a pager and returns a "LIMIT/OFFSET" clause if required
 func LimitOffset(pager entities.Pager) string {
 	clause := ""
 	if pager.PerPage > 0 {

@@ -37,10 +37,10 @@ func NewSession(user BasicUser, domain BasicDomain, userAgent, remoteAddr string
 	return s
 }
 
-// IsValid checks if session has a non-empty Sid, non-null User's Id and
+// IsValid checks if session has a non-empty Sid, non-null User's/Domain's Ids and
 // a non-zero expiration time.
 func (s *Session) IsValid() bool {
-	return s.ID != "" && s.User.ID != "" && s.User.Enabled && !s.ExpiresOn.IsZero()
+	return s.ID != "" && s.User.ID != "" && s.Domain.ID != "" && s.User.Enabled && !s.ExpiresOn.IsZero()
 }
 
 // IsExpired checks if the session is expired

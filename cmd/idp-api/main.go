@@ -22,7 +22,7 @@ func main() {
 	}
 	defer dbmap.Db.Close()
 	if config.SQLTraceOn() {
-		dbmap.TraceOn("[gorp]", log.New(os.Stderr, "", log.LstdFlags))
+		dbmap.TraceOn("", log.New(os.Stderr, "[gorp] ", log.LstdFlags))
 	}
 	log.SetPrefix("[main] ")
 
