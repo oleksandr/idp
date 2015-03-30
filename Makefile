@@ -1,4 +1,4 @@
-.PHONY: build clean api cli gox
+.PHONY: build clean api cli thrift gox
 
 all: clean build
 
@@ -9,6 +9,10 @@ api:
 
 cli:
 	go install github.com/oleksandr/idp/cmd/idp-cli
+
+thrift:
+	mkdir -p $(PWD)/rpc/generated
+	thrift -r --gen go:thrift_import="git-wip-us.apache.org/repos/asf/thrift.git/lib/go/thrift" -out $(PWD)/rpc/generated spec/services.thrift
 
 gox:
 	mkdir -p $(PWD)/build

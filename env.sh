@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # Bind API HTTP server to this address
-export IDP_ADDR="127.0.0.1:8000"
+export IDP_REST_ADDR="127.0.0.1:8000"
+# Bind API RPC server to this address
+export IDP_RPC_ADDR="127.0.0.1:8001"
 # Session's TTL (expires=now+TTL)
 export IDP_SESSION_TTL=60
 # Secret salt for hashing passwords (change before initial install, don't change afterwards)

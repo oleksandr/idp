@@ -6,8 +6,10 @@ const (
 	// CurrentCLIVersion is current IdP's CLI version
 	CurrentCLIVersion = "0.0.1"
 
-	// EnvIDPAddr environment variable
-	EnvIDPAddr = "IDP_ADDR"
+	// EnvIDPRESTAddr environment variable
+	EnvIDPRESTAddr = "IDP_REST_ADDR"
+	// EnvIDPRPCAddr environment variable
+	EnvIDPRPCAddr = "IDP_RPC_ADDR"
 	// EnvIDPDriver environment variable
 	EnvIDPDriver = "IDP_DB_Driver"
 	// EnvIDPDSN environment variable
