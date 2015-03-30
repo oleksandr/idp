@@ -25,10 +25,14 @@ type Authenticator interface { //Authenticator service
 	CreateSession(domain string, name string, password string, userAgent string, remoteAddr string) (r *Session, err error)
 	// Parameters:
 	//  - SessionID
-	CheckSession(sessionID string) (r bool, err error)
+	//  - UserAgent
+	//  - RemoteAddr
+	CheckSession(sessionID string, userAgent string, remoteAddr string) (r bool, err error)
 	// Parameters:
 	//  - SessionID
-	DeleteSession(sessionID string) (r bool, err error)
+	//  - UserAgent
+	//  - RemoteAddr
+	DeleteSession(sessionID string, userAgent string, remoteAddr string) (r bool, err error)
 }
 
 //Authenticator service
@@ -147,14 +151,16 @@ func (p *AuthenticatorClient) recvCreateSession() (value *Session, err error) {
 
 // Parameters:
 //  - SessionID
-func (p *AuthenticatorClient) CheckSession(sessionID string) (r bool, err error) {
-	if err = p.sendCheckSession(sessionID); err != nil {
+//  - UserAgent
+//  - RemoteAddr
+func (p *AuthenticatorClient) CheckSession(sessionID string, userAgent string, remoteAddr string) (r bool, err error) {
+	if err = p.sendCheckSession(sessionID, userAgent, remoteAddr); err != nil {
 		return
 	}
 	return p.recvCheckSession()
 }
 
-func (p *AuthenticatorClient) sendCheckSession(sessionID string) (err error) {
+func (p *AuthenticatorClient) sendCheckSession(sessionID string, userAgent string, remoteAddr string) (err error) {
 	oprot := p.OutputProtocol
 	if oprot == nil {
 		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -165,7 +171,9 @@ func (p *AuthenticatorClient) sendCheckSession(sessionID string) (err error) {
 		return
 	}
 	args := CheckSessionArgs{
-		SessionID: sessionID,
+		SessionID:  sessionID,
+		UserAgent:  userAgent,
+		RemoteAddr: remoteAddr,
 	}
 	if err = args.Write(oprot); err != nil {
 		return
@@ -226,14 +234,16 @@ func (p *AuthenticatorClient) recvCheckSession() (value bool, err error) {
 
 // Parameters:
 //  - SessionID
-func (p *AuthenticatorClient) DeleteSession(sessionID string) (r bool, err error) {
-	if err = p.sendDeleteSession(sessionID); err != nil {
+//  - UserAgent
+//  - RemoteAddr
+func (p *AuthenticatorClient) DeleteSession(sessionID string, userAgent string, remoteAddr string) (r bool, err error) {
+	if err = p.sendDeleteSession(sessionID, userAgent, remoteAddr); err != nil {
 		return
 	}
 	return p.recvDeleteSession()
 }
 
-func (p *AuthenticatorClient) sendDeleteSession(sessionID string) (err error) {
+func (p *AuthenticatorClient) sendDeleteSession(sessionID string, userAgent string, remoteAddr string) (err error) {
 	oprot := p.OutputProtocol
 	if oprot == nil {
 		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -244,7 +254,9 @@ func (p *AuthenticatorClient) sendDeleteSession(sessionID string) (err error) {
 		return
 	}
 	args := DeleteSessionArgs{
-		SessionID: sessionID,
+		SessionID:  sessionID,
+		UserAgent:  userAgent,
+		RemoteAddr: remoteAddr,
 	}
 	if err = args.Write(oprot); err != nil {
 		return
@@ -373,9 +385,9 @@ func (p *authenticatorProcessorCreateSession) Process(seqId int32, iprot, oprot 
 		switch v := err2.(type) {
 		case *ServerError:
 			result.Error1 = v
-		case *BadRequest:
+		case *BadRequestError:
 			result.Error2 = v
-		case *Forbidden:
+		case *ForbiddenError:
 			result.Error3 = v
 		default:
 			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing createSession: "+err2.Error())
@@ -426,13 +438,13 @@ func (p *authenticatorProcessorCheckSession) Process(seqId int32, iprot, oprot t
 	result := CheckSessionResult{}
 	var retval bool
 	var err2 error
-	if retval, err2 = p.handler.CheckSession(args.SessionID); err2 != nil {
+	if retval, err2 = p.handler.CheckSession(args.SessionID, args.UserAgent, args.RemoteAddr); err2 != nil {
 		switch v := err2.(type) {
 		case *ServerError:
 			result.Error1 = v
-		case *BadRequest:
+		case *BadRequestError:
 			result.Error2 = v
-		case *Forbidden:
+		case *ForbiddenError:
 			result.Error3 = v
 		default:
 			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing checkSession: "+err2.Error())
@@ -483,13 +495,13 @@ func (p *authenticatorProcessorDeleteSession) Process(seqId int32, iprot, oprot 
 	result := DeleteSessionResult{}
 	var retval bool
 	var err2 error
-	if retval, err2 = p.handler.DeleteSession(args.SessionID); err2 != nil {
+	if retval, err2 = p.handler.DeleteSession(args.SessionID, args.UserAgent, args.RemoteAddr); err2 != nil {
 		switch v := err2.(type) {
 		case *ServerError:
 			result.Error1 = v
-		case *BadRequest:
+		case *BadRequestError:
 			result.Error2 = v
-		case *Forbidden:
+		case *ForbiddenError:
 			result.Error3 = v
 		default:
 			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing deleteSession: "+err2.Error())
@@ -747,10 +759,10 @@ func (p *CreateSessionArgs) String() string {
 }
 
 type CreateSessionResult struct {
-	Success *Session     `thrift:"success,0" json:"success"`
-	Error1  *ServerError `thrift:"error1,1" json:"error1"`
-	Error2  *BadRequest  `thrift:"error2,2" json:"error2"`
-	Error3  *Forbidden   `thrift:"error3,3" json:"error3"`
+	Success *Session         `thrift:"success,0" json:"success"`
+	Error1  *ServerError     `thrift:"error1,1" json:"error1"`
+	Error2  *BadRequestError `thrift:"error2,2" json:"error2"`
+	Error3  *ForbiddenError  `thrift:"error3,3" json:"error3"`
 }
 
 func NewCreateSessionResult() *CreateSessionResult {
@@ -775,18 +787,18 @@ func (p *CreateSessionResult) GetError1() *ServerError {
 	return p.Error1
 }
 
-var CreateSessionResult_Error2_DEFAULT *BadRequest
+var CreateSessionResult_Error2_DEFAULT *BadRequestError
 
-func (p *CreateSessionResult) GetError2() *BadRequest {
+func (p *CreateSessionResult) GetError2() *BadRequestError {
 	if !p.IsSetError2() {
 		return CreateSessionResult_Error2_DEFAULT
 	}
 	return p.Error2
 }
 
-var CreateSessionResult_Error3_DEFAULT *Forbidden
+var CreateSessionResult_Error3_DEFAULT *ForbiddenError
 
-func (p *CreateSessionResult) GetError3() *Forbidden {
+func (p *CreateSessionResult) GetError3() *ForbiddenError {
 	if !p.IsSetError3() {
 		return CreateSessionResult_Error3_DEFAULT
 	}
@@ -869,7 +881,7 @@ func (p *CreateSessionResult) ReadField1(iprot thrift.TProtocol) error {
 }
 
 func (p *CreateSessionResult) ReadField2(iprot thrift.TProtocol) error {
-	p.Error2 = &BadRequest{}
+	p.Error2 = &BadRequestError{}
 	if err := p.Error2.Read(iprot); err != nil {
 		return fmt.Errorf("%T error reading struct: %s", p.Error2, err)
 	}
@@ -877,7 +889,7 @@ func (p *CreateSessionResult) ReadField2(iprot thrift.TProtocol) error {
 }
 
 func (p *CreateSessionResult) ReadField3(iprot thrift.TProtocol) error {
-	p.Error3 = &Forbidden{}
+	p.Error3 = &ForbiddenError{}
 	if err := p.Error3.Read(iprot); err != nil {
 		return fmt.Errorf("%T error reading struct: %s", p.Error3, err)
 	}
@@ -977,7 +989,9 @@ func (p *CreateSessionResult) String() string {
 }
 
 type CheckSessionArgs struct {
-	SessionID string `thrift:"sessionID,1" json:"sessionID"`
+	SessionID  string `thrift:"sessionID,1" json:"sessionID"`
+	UserAgent  string `thrift:"userAgent,2" json:"userAgent"`
+	RemoteAddr string `thrift:"remoteAddr,3" json:"remoteAddr"`
 }
 
 func NewCheckSessionArgs() *CheckSessionArgs {
@@ -986,6 +1000,14 @@ func NewCheckSessionArgs() *CheckSessionArgs {
 
 func (p *CheckSessionArgs) GetSessionID() string {
 	return p.SessionID
+}
+
+func (p *CheckSessionArgs) GetUserAgent() string {
+	return p.UserAgent
+}
+
+func (p *CheckSessionArgs) GetRemoteAddr() string {
+	return p.RemoteAddr
 }
 func (p *CheckSessionArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
@@ -1002,6 +1024,14 @@ func (p *CheckSessionArgs) Read(iprot thrift.TProtocol) error {
 		switch fieldId {
 		case 1:
 			if err := p.ReadField1(iprot); err != nil {
+				return err
+			}
+		case 2:
+			if err := p.ReadField2(iprot); err != nil {
+				return err
+			}
+		case 3:
+			if err := p.ReadField3(iprot); err != nil {
 				return err
 			}
 		default:
@@ -1028,11 +1058,35 @@ func (p *CheckSessionArgs) ReadField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *CheckSessionArgs) ReadField2(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 2: %s", err)
+	} else {
+		p.UserAgent = v
+	}
+	return nil
+}
+
+func (p *CheckSessionArgs) ReadField3(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 3: %s", err)
+	} else {
+		p.RemoteAddr = v
+	}
+	return nil
+}
+
 func (p *CheckSessionArgs) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("checkSession_args"); err != nil {
 		return fmt.Errorf("%T write struct begin error: %s", p, err)
 	}
 	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField3(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -1057,6 +1111,32 @@ func (p *CheckSessionArgs) writeField1(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
+func (p *CheckSessionArgs) writeField2(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("userAgent", thrift.STRING, 2); err != nil {
+		return fmt.Errorf("%T write field begin error 2:userAgent: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.UserAgent)); err != nil {
+		return fmt.Errorf("%T.userAgent (2) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 2:userAgent: %s", p, err)
+	}
+	return err
+}
+
+func (p *CheckSessionArgs) writeField3(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("remoteAddr", thrift.STRING, 3); err != nil {
+		return fmt.Errorf("%T write field begin error 3:remoteAddr: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.RemoteAddr)); err != nil {
+		return fmt.Errorf("%T.remoteAddr (3) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 3:remoteAddr: %s", p, err)
+	}
+	return err
+}
+
 func (p *CheckSessionArgs) String() string {
 	if p == nil {
 		return "<nil>"
@@ -1065,10 +1145,10 @@ func (p *CheckSessionArgs) String() string {
 }
 
 type CheckSessionResult struct {
-	Success *bool        `thrift:"success,0" json:"success"`
-	Error1  *ServerError `thrift:"error1,1" json:"error1"`
-	Error2  *BadRequest  `thrift:"error2,2" json:"error2"`
-	Error3  *Forbidden   `thrift:"error3,3" json:"error3"`
+	Success *bool            `thrift:"success,0" json:"success"`
+	Error1  *ServerError     `thrift:"error1,1" json:"error1"`
+	Error2  *BadRequestError `thrift:"error2,2" json:"error2"`
+	Error3  *ForbiddenError  `thrift:"error3,3" json:"error3"`
 }
 
 func NewCheckSessionResult() *CheckSessionResult {
@@ -1093,18 +1173,18 @@ func (p *CheckSessionResult) GetError1() *ServerError {
 	return p.Error1
 }
 
-var CheckSessionResult_Error2_DEFAULT *BadRequest
+var CheckSessionResult_Error2_DEFAULT *BadRequestError
 
-func (p *CheckSessionResult) GetError2() *BadRequest {
+func (p *CheckSessionResult) GetError2() *BadRequestError {
 	if !p.IsSetError2() {
 		return CheckSessionResult_Error2_DEFAULT
 	}
 	return p.Error2
 }
 
-var CheckSessionResult_Error3_DEFAULT *Forbidden
+var CheckSessionResult_Error3_DEFAULT *ForbiddenError
 
-func (p *CheckSessionResult) GetError3() *Forbidden {
+func (p *CheckSessionResult) GetError3() *ForbiddenError {
 	if !p.IsSetError3() {
 		return CheckSessionResult_Error3_DEFAULT
 	}
@@ -1188,7 +1268,7 @@ func (p *CheckSessionResult) ReadField1(iprot thrift.TProtocol) error {
 }
 
 func (p *CheckSessionResult) ReadField2(iprot thrift.TProtocol) error {
-	p.Error2 = &BadRequest{}
+	p.Error2 = &BadRequestError{}
 	if err := p.Error2.Read(iprot); err != nil {
 		return fmt.Errorf("%T error reading struct: %s", p.Error2, err)
 	}
@@ -1196,7 +1276,7 @@ func (p *CheckSessionResult) ReadField2(iprot thrift.TProtocol) error {
 }
 
 func (p *CheckSessionResult) ReadField3(iprot thrift.TProtocol) error {
-	p.Error3 = &Forbidden{}
+	p.Error3 = &ForbiddenError{}
 	if err := p.Error3.Read(iprot); err != nil {
 		return fmt.Errorf("%T error reading struct: %s", p.Error3, err)
 	}
@@ -1296,7 +1376,9 @@ func (p *CheckSessionResult) String() string {
 }
 
 type DeleteSessionArgs struct {
-	SessionID string `thrift:"sessionID,1" json:"sessionID"`
+	SessionID  string `thrift:"sessionID,1" json:"sessionID"`
+	UserAgent  string `thrift:"userAgent,2" json:"userAgent"`
+	RemoteAddr string `thrift:"remoteAddr,3" json:"remoteAddr"`
 }
 
 func NewDeleteSessionArgs() *DeleteSessionArgs {
@@ -1305,6 +1387,14 @@ func NewDeleteSessionArgs() *DeleteSessionArgs {
 
 func (p *DeleteSessionArgs) GetSessionID() string {
 	return p.SessionID
+}
+
+func (p *DeleteSessionArgs) GetUserAgent() string {
+	return p.UserAgent
+}
+
+func (p *DeleteSessionArgs) GetRemoteAddr() string {
+	return p.RemoteAddr
 }
 func (p *DeleteSessionArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
@@ -1321,6 +1411,14 @@ func (p *DeleteSessionArgs) Read(iprot thrift.TProtocol) error {
 		switch fieldId {
 		case 1:
 			if err := p.ReadField1(iprot); err != nil {
+				return err
+			}
+		case 2:
+			if err := p.ReadField2(iprot); err != nil {
+				return err
+			}
+		case 3:
+			if err := p.ReadField3(iprot); err != nil {
 				return err
 			}
 		default:
@@ -1347,11 +1445,35 @@ func (p *DeleteSessionArgs) ReadField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *DeleteSessionArgs) ReadField2(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 2: %s", err)
+	} else {
+		p.UserAgent = v
+	}
+	return nil
+}
+
+func (p *DeleteSessionArgs) ReadField3(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 3: %s", err)
+	} else {
+		p.RemoteAddr = v
+	}
+	return nil
+}
+
 func (p *DeleteSessionArgs) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("deleteSession_args"); err != nil {
 		return fmt.Errorf("%T write struct begin error: %s", p, err)
 	}
 	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField3(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -1376,6 +1498,32 @@ func (p *DeleteSessionArgs) writeField1(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
+func (p *DeleteSessionArgs) writeField2(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("userAgent", thrift.STRING, 2); err != nil {
+		return fmt.Errorf("%T write field begin error 2:userAgent: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.UserAgent)); err != nil {
+		return fmt.Errorf("%T.userAgent (2) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 2:userAgent: %s", p, err)
+	}
+	return err
+}
+
+func (p *DeleteSessionArgs) writeField3(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("remoteAddr", thrift.STRING, 3); err != nil {
+		return fmt.Errorf("%T write field begin error 3:remoteAddr: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.RemoteAddr)); err != nil {
+		return fmt.Errorf("%T.remoteAddr (3) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 3:remoteAddr: %s", p, err)
+	}
+	return err
+}
+
 func (p *DeleteSessionArgs) String() string {
 	if p == nil {
 		return "<nil>"
@@ -1384,10 +1532,10 @@ func (p *DeleteSessionArgs) String() string {
 }
 
 type DeleteSessionResult struct {
-	Success *bool        `thrift:"success,0" json:"success"`
-	Error1  *ServerError `thrift:"error1,1" json:"error1"`
-	Error2  *BadRequest  `thrift:"error2,2" json:"error2"`
-	Error3  *Forbidden   `thrift:"error3,3" json:"error3"`
+	Success *bool            `thrift:"success,0" json:"success"`
+	Error1  *ServerError     `thrift:"error1,1" json:"error1"`
+	Error2  *BadRequestError `thrift:"error2,2" json:"error2"`
+	Error3  *ForbiddenError  `thrift:"error3,3" json:"error3"`
 }
 
 func NewDeleteSessionResult() *DeleteSessionResult {
@@ -1412,18 +1560,18 @@ func (p *DeleteSessionResult) GetError1() *ServerError {
 	return p.Error1
 }
 
-var DeleteSessionResult_Error2_DEFAULT *BadRequest
+var DeleteSessionResult_Error2_DEFAULT *BadRequestError
 
-func (p *DeleteSessionResult) GetError2() *BadRequest {
+func (p *DeleteSessionResult) GetError2() *BadRequestError {
 	if !p.IsSetError2() {
 		return DeleteSessionResult_Error2_DEFAULT
 	}
 	return p.Error2
 }
 
-var DeleteSessionResult_Error3_DEFAULT *Forbidden
+var DeleteSessionResult_Error3_DEFAULT *ForbiddenError
 
-func (p *DeleteSessionResult) GetError3() *Forbidden {
+func (p *DeleteSessionResult) GetError3() *ForbiddenError {
 	if !p.IsSetError3() {
 		return DeleteSessionResult_Error3_DEFAULT
 	}
@@ -1507,7 +1655,7 @@ func (p *DeleteSessionResult) ReadField1(iprot thrift.TProtocol) error {
 }
 
 func (p *DeleteSessionResult) ReadField2(iprot thrift.TProtocol) error {
-	p.Error2 = &BadRequest{}
+	p.Error2 = &BadRequestError{}
 	if err := p.Error2.Read(iprot); err != nil {
 		return fmt.Errorf("%T error reading struct: %s", p.Error2, err)
 	}
@@ -1515,7 +1663,7 @@ func (p *DeleteSessionResult) ReadField2(iprot thrift.TProtocol) error {
 }
 
 func (p *DeleteSessionResult) ReadField3(iprot thrift.TProtocol) error {
-	p.Error3 = &Forbidden{}
+	p.Error3 = &ForbiddenError{}
 	if err := p.Error3.Read(iprot); err != nil {
 		return fmt.Errorf("%T error reading struct: %s", p.Error3, err)
 	}

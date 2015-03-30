@@ -31,7 +31,7 @@ func (handler *AuthenticatorHandler) CreateSession(domain string, name string, p
 
 	d, err := handler.DomainInteractor.FindByName(domain)
 	if err != nil {
-		e := services.NewBadRequest()
+		e := services.NewBadRequestError()
 		e.Code = "0000"
 		e.Msg = e.Error()
 		return nil, e
@@ -39,14 +39,14 @@ func (handler *AuthenticatorHandler) CreateSession(domain string, name string, p
 
 	user, err := handler.UserInteractor.FindByNameInDomain(name, d.ID)
 	if err != nil {
-		e := services.NewBadRequest()
+		e := services.NewBadRequestError()
 		e.Code = "0000"
 		e.Msg = e.Error()
 		return nil, e
 	}
 
 	if !user.IsPassword(password) {
-		e := services.NewForbidden()
+		e := services.NewForbiddenError()
 		e.Code = "0000"
 		e.Msg = e.Error()
 		return nil, e
@@ -62,7 +62,7 @@ func (handler *AuthenticatorHandler) CreateSession(domain string, name string, p
 	session = entities.NewSession(*user, *d, userAgent, remoteAddr)
 	err = handler.SessionInteractor.Create(*session)
 	if err != nil {
-		e := services.NewForbidden()
+		e := services.NewForbiddenError()
 		e.Code = "0000"
 		e.Msg = e.Error()
 		return nil, e
@@ -72,19 +72,19 @@ func (handler *AuthenticatorHandler) CreateSession(domain string, name string, p
 }
 
 // CheckSession is an implementation of Authentocator's CheckSession method
-func (handler *AuthenticatorHandler) CheckSession(sessionID string) (r bool, err error) {
+func (handler *AuthenticatorHandler) CheckSession(sessionID string, userAgent string, remoteAddr string) (r bool, err error) {
 	handler.log.Println("checkSession(%v)", sessionID)
 
 	session, err := handler.SessionInteractor.Find(sessionID)
 	if err != nil {
-		e := services.NewBadRequest()
+		e := services.NewBadRequestError()
 		e.Code = "0000"
 		e.Msg = e.Error()
 		return false, e
 	}
 
-	if session.IsExpired() {
-		e := services.NewForbidden()
+	if session.IsExpired() || session.UserAgent != userAgent || session.RemoteAddr != remoteAddr {
+		e := services.NewForbiddenError()
 		e.Code = "0000"
 		e.Msg = e.Error()
 		return false, e
@@ -94,12 +94,19 @@ func (handler *AuthenticatorHandler) CheckSession(sessionID string) (r bool, err
 }
 
 // DeleteSession is an implementation of Authentocator's DeleteSession method
-func (handler *AuthenticatorHandler) DeleteSession(sessionID string) (r bool, err error) {
+func (handler *AuthenticatorHandler) DeleteSession(sessionID string, userAgent string, remoteAddr string) (r bool, err error) {
 	handler.log.Println("deleteSession(%v)", sessionID)
 
 	session, err := handler.SessionInteractor.Find(sessionID)
 	if err != nil {
-		e := services.NewBadRequest()
+		e := services.NewBadRequestError()
+		e.Code = "0000"
+		e.Msg = e.Error()
+		return false, e
+	}
+
+	if session.UserAgent != userAgent || session.RemoteAddr != remoteAddr {
+		e := services.NewForbiddenError()
 		e.Code = "0000"
 		e.Msg = e.Error()
 		return false, e
@@ -107,7 +114,7 @@ func (handler *AuthenticatorHandler) DeleteSession(sessionID string) (r bool, er
 
 	err = handler.SessionInteractor.Delete(*session)
 	if err != nil {
-		e := services.NewBadRequest()
+		e := services.NewBadRequestError()
 		e.Code = "0000"
 		e.Msg = e.Error()
 		return false, e

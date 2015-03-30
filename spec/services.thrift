@@ -50,7 +50,7 @@ exception ServerError {
 /**
  * Exception represents invalid arguments submitted error
  */
-exception BadRequest {
+exception BadRequestError {
     1: string code,
     2: string msg
 }
@@ -58,7 +58,7 @@ exception BadRequest {
 /**
  * Exception represents forbidden error
  */
-exception Forbidden {
+exception ForbiddenError {
     1: string code,
     2: string msg
 }
@@ -72,11 +72,20 @@ service Authenticator {
                           2:string name,
                           3:string password,
                           4:string userAgent,
-                          5:string remoteAddr) throws (1:ServerError error1, 2:BadRequest error2, 3:Forbidden error3),
+                          5:string remoteAddr) throws (1:ServerError error1, 2:BadRequestError error2, 3:ForbiddenError error3),
 
     # Checking existing session by ID
-    bool checkSession(1:string sessionID) throws (1:ServerError error1, 2:BadRequest error2, 3:Forbidden error3),
+    bool checkSession(1:string sessionID,
+                      2:string userAgent,
+                      3:string remoteAddr) throws (1:ServerError error1, 2:BadRequestError error2, 3:ForbiddenError error3),
 
     # Delete existing session by ID
-    bool deleteSession(1:string sessionID) throws (1:ServerError error1, 2:BadRequest error2, 3:Forbidden error3)
+    bool deleteSession(1:string sessionID,
+                       2:string userAgent,
+                       3:string remoteAddr) throws (1:ServerError error1, 2:BadRequestError error2, 3:ForbiddenError error3)
+
 }
+
+/**
+ * ADD MORE SERVICES HERE
+ */

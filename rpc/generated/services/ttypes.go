@@ -830,23 +830,23 @@ func (p *ServerError) Error() string {
 	return p.String()
 }
 
-type BadRequest struct {
+type BadRequestError struct {
 	Code string `thrift:"code,1" json:"code"`
 	Msg  string `thrift:"msg,2" json:"msg"`
 }
 
-func NewBadRequest() *BadRequest {
-	return &BadRequest{}
+func NewBadRequestError() *BadRequestError {
+	return &BadRequestError{}
 }
 
-func (p *BadRequest) GetCode() string {
+func (p *BadRequestError) GetCode() string {
 	return p.Code
 }
 
-func (p *BadRequest) GetMsg() string {
+func (p *BadRequestError) GetMsg() string {
 	return p.Msg
 }
-func (p *BadRequest) Read(iprot thrift.TProtocol) error {
+func (p *BadRequestError) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return fmt.Errorf("%T read error: %s", p, err)
 	}
@@ -882,7 +882,7 @@ func (p *BadRequest) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BadRequest) ReadField1(iprot thrift.TProtocol) error {
+func (p *BadRequestError) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return fmt.Errorf("error reading field 1: %s", err)
 	} else {
@@ -891,7 +891,7 @@ func (p *BadRequest) ReadField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BadRequest) ReadField2(iprot thrift.TProtocol) error {
+func (p *BadRequestError) ReadField2(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return fmt.Errorf("error reading field 2: %s", err)
 	} else {
@@ -900,8 +900,8 @@ func (p *BadRequest) ReadField2(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BadRequest) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("BadRequest"); err != nil {
+func (p *BadRequestError) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("BadRequestError"); err != nil {
 		return fmt.Errorf("%T write struct begin error: %s", p, err)
 	}
 	if err := p.writeField1(oprot); err != nil {
@@ -919,7 +919,7 @@ func (p *BadRequest) Write(oprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BadRequest) writeField1(oprot thrift.TProtocol) (err error) {
+func (p *BadRequestError) writeField1(oprot thrift.TProtocol) (err error) {
 	if err := oprot.WriteFieldBegin("code", thrift.STRING, 1); err != nil {
 		return fmt.Errorf("%T write field begin error 1:code: %s", p, err)
 	}
@@ -932,7 +932,7 @@ func (p *BadRequest) writeField1(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
-func (p *BadRequest) writeField2(oprot thrift.TProtocol) (err error) {
+func (p *BadRequestError) writeField2(oprot thrift.TProtocol) (err error) {
 	if err := oprot.WriteFieldBegin("msg", thrift.STRING, 2); err != nil {
 		return fmt.Errorf("%T write field begin error 2:msg: %s", p, err)
 	}
@@ -945,34 +945,34 @@ func (p *BadRequest) writeField2(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
-func (p *BadRequest) String() string {
+func (p *BadRequestError) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("BadRequest(%+v)", *p)
+	return fmt.Sprintf("BadRequestError(%+v)", *p)
 }
 
-func (p *BadRequest) Error() string {
+func (p *BadRequestError) Error() string {
 	return p.String()
 }
 
-type Forbidden struct {
+type ForbiddenError struct {
 	Code string `thrift:"code,1" json:"code"`
 	Msg  string `thrift:"msg,2" json:"msg"`
 }
 
-func NewForbidden() *Forbidden {
-	return &Forbidden{}
+func NewForbiddenError() *ForbiddenError {
+	return &ForbiddenError{}
 }
 
-func (p *Forbidden) GetCode() string {
+func (p *ForbiddenError) GetCode() string {
 	return p.Code
 }
 
-func (p *Forbidden) GetMsg() string {
+func (p *ForbiddenError) GetMsg() string {
 	return p.Msg
 }
-func (p *Forbidden) Read(iprot thrift.TProtocol) error {
+func (p *ForbiddenError) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return fmt.Errorf("%T read error: %s", p, err)
 	}
@@ -1008,7 +1008,7 @@ func (p *Forbidden) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Forbidden) ReadField1(iprot thrift.TProtocol) error {
+func (p *ForbiddenError) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return fmt.Errorf("error reading field 1: %s", err)
 	} else {
@@ -1017,7 +1017,7 @@ func (p *Forbidden) ReadField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Forbidden) ReadField2(iprot thrift.TProtocol) error {
+func (p *ForbiddenError) ReadField2(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return fmt.Errorf("error reading field 2: %s", err)
 	} else {
@@ -1026,8 +1026,8 @@ func (p *Forbidden) ReadField2(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Forbidden) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("Forbidden"); err != nil {
+func (p *ForbiddenError) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("ForbiddenError"); err != nil {
 		return fmt.Errorf("%T write struct begin error: %s", p, err)
 	}
 	if err := p.writeField1(oprot); err != nil {
@@ -1045,7 +1045,7 @@ func (p *Forbidden) Write(oprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Forbidden) writeField1(oprot thrift.TProtocol) (err error) {
+func (p *ForbiddenError) writeField1(oprot thrift.TProtocol) (err error) {
 	if err := oprot.WriteFieldBegin("code", thrift.STRING, 1); err != nil {
 		return fmt.Errorf("%T write field begin error 1:code: %s", p, err)
 	}
@@ -1058,7 +1058,7 @@ func (p *Forbidden) writeField1(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
-func (p *Forbidden) writeField2(oprot thrift.TProtocol) (err error) {
+func (p *ForbiddenError) writeField2(oprot thrift.TProtocol) (err error) {
 	if err := oprot.WriteFieldBegin("msg", thrift.STRING, 2); err != nil {
 		return fmt.Errorf("%T write field begin error 2:msg: %s", p, err)
 	}
@@ -1071,13 +1071,13 @@ func (p *Forbidden) writeField2(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
-func (p *Forbidden) String() string {
+func (p *ForbiddenError) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("Forbidden(%+v)", *p)
+	return fmt.Sprintf("ForbiddenError(%+v)", *p)
 }
 
-func (p *Forbidden) Error() string {
+func (p *ForbiddenError) Error() string {
 	return p.String()
 }
