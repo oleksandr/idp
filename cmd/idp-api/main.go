@@ -44,7 +44,10 @@ func main() {
 		domainInteractor,
 		userInteractor,
 		sessionInteractor)
-	go startRPCServer(exitCh, sessionInteractor)
+	go startRPCServer(exitCh,
+		domainInteractor,
+		userInteractor,
+		sessionInteractor)
 	go func() {
 		for {
 			select {

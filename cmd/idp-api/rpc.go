@@ -11,7 +11,11 @@ import (
 	"github.com/oleksandr/idp/usecases"
 )
 
-func startRPCServer(exitCh chan bool, sessionInteractor usecases.SessionInteractor) {
+func startRPCServer(exitCh chan bool,
+	domainInteractor usecases.DomainInteractor,
+	userInteractor usecases.UserInteractor,
+	sessionInteractor usecases.SessionInteractor) {
+
 	addr := os.Getenv(config.EnvIDPRPCAddr)
 	if addr == "" {
 		addr = ":8001"
@@ -25,7 +29,12 @@ func startRPCServer(exitCh chan bool, sessionInteractor usecases.SessionInteract
 		exitCh <- true
 		return
 	}
+
 	handler := rpc.NewAuthenticatorHandler()
+	handler.DomainInteractor = domainInteractor
+	handler.UserInteractor = userInteractor
+	handler.SessionInteractor = sessionInteractor
+
 	processor := services.NewAuthenticatorProcessor(handler)
 
 	server := thrift.NewTSimpleServer4(processor, transport, transportFactory, protocolFactory)
