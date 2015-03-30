@@ -17,8 +17,10 @@ var _ = bytes.Equal
 var GoUnusedProtection__ int
 
 type Domain struct {
-	Id   string `thrift:"id,1" json:"id"`
-	Name string `thrift:"name,2" json:"name"`
+	Id          string `thrift:"id,1" json:"id"`
+	Name        string `thrift:"name,2" json:"name"`
+	Description string `thrift:"description,3" json:"description"`
+	Enabled     bool   `thrift:"enabled,4" json:"enabled"`
 }
 
 func NewDomain() *Domain {
@@ -31,6 +33,14 @@ func (p *Domain) GetId() string {
 
 func (p *Domain) GetName() string {
 	return p.Name
+}
+
+func (p *Domain) GetDescription() string {
+	return p.Description
+}
+
+func (p *Domain) GetEnabled() bool {
+	return p.Enabled
 }
 func (p *Domain) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
@@ -51,6 +61,14 @@ func (p *Domain) Read(iprot thrift.TProtocol) error {
 			}
 		case 2:
 			if err := p.ReadField2(iprot); err != nil {
+				return err
+			}
+		case 3:
+			if err := p.ReadField3(iprot); err != nil {
+				return err
+			}
+		case 4:
+			if err := p.ReadField4(iprot); err != nil {
 				return err
 			}
 		default:
@@ -86,6 +104,24 @@ func (p *Domain) ReadField2(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *Domain) ReadField3(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 3: %s", err)
+	} else {
+		p.Description = v
+	}
+	return nil
+}
+
+func (p *Domain) ReadField4(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadBool(); err != nil {
+		return fmt.Errorf("error reading field 4: %s", err)
+	} else {
+		p.Enabled = v
+	}
+	return nil
+}
+
 func (p *Domain) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("Domain"); err != nil {
 		return fmt.Errorf("%T write struct begin error: %s", p, err)
@@ -94,6 +130,12 @@ func (p *Domain) Write(oprot thrift.TProtocol) error {
 		return err
 	}
 	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField3(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField4(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -131,6 +173,32 @@ func (p *Domain) writeField2(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
+func (p *Domain) writeField3(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("description", thrift.STRING, 3); err != nil {
+		return fmt.Errorf("%T write field begin error 3:description: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.Description)); err != nil {
+		return fmt.Errorf("%T.description (3) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 3:description: %s", p, err)
+	}
+	return err
+}
+
+func (p *Domain) writeField4(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("enabled", thrift.BOOL, 4); err != nil {
+		return fmt.Errorf("%T write field begin error 4:enabled: %s", p, err)
+	}
+	if err := oprot.WriteBool(bool(p.Enabled)); err != nil {
+		return fmt.Errorf("%T.enabled (4) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 4:enabled: %s", p, err)
+	}
+	return err
+}
+
 func (p *Domain) String() string {
 	if p == nil {
 		return "<nil>"
@@ -139,8 +207,9 @@ func (p *Domain) String() string {
 }
 
 type User struct {
-	Id   string `thrift:"id,1" json:"id"`
-	Name string `thrift:"name,2" json:"name"`
+	Id      string `thrift:"id,1" json:"id"`
+	Name    string `thrift:"name,2" json:"name"`
+	Enabled bool   `thrift:"enabled,3" json:"enabled"`
 }
 
 func NewUser() *User {
@@ -153,6 +222,10 @@ func (p *User) GetId() string {
 
 func (p *User) GetName() string {
 	return p.Name
+}
+
+func (p *User) GetEnabled() bool {
+	return p.Enabled
 }
 func (p *User) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
@@ -173,6 +246,10 @@ func (p *User) Read(iprot thrift.TProtocol) error {
 			}
 		case 2:
 			if err := p.ReadField2(iprot); err != nil {
+				return err
+			}
+		case 3:
+			if err := p.ReadField3(iprot); err != nil {
 				return err
 			}
 		default:
@@ -208,6 +285,15 @@ func (p *User) ReadField2(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *User) ReadField3(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadBool(); err != nil {
+		return fmt.Errorf("error reading field 3: %s", err)
+	} else {
+		p.Enabled = v
+	}
+	return nil
+}
+
 func (p *User) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("User"); err != nil {
 		return fmt.Errorf("%T write struct begin error: %s", p, err)
@@ -216,6 +302,9 @@ func (p *User) Write(oprot thrift.TProtocol) error {
 		return err
 	}
 	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField3(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -253,6 +342,19 @@ func (p *User) writeField2(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
+func (p *User) writeField3(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("enabled", thrift.BOOL, 3); err != nil {
+		return fmt.Errorf("%T write field begin error 3:enabled: %s", p, err)
+	}
+	if err := oprot.WriteBool(bool(p.Enabled)); err != nil {
+		return fmt.Errorf("%T.enabled (3) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 3:enabled: %s", p, err)
+	}
+	return err
+}
+
 func (p *User) String() string {
 	if p == nil {
 		return "<nil>"
@@ -261,9 +363,14 @@ func (p *User) String() string {
 }
 
 type Session struct {
-	Id     string  `thrift:"id,1" json:"id"`
-	Domain *Domain `thrift:"domain,2" json:"domain"`
-	User   *User   `thrift:"user,3" json:"user"`
+	Id         string  `thrift:"id,1" json:"id"`
+	Domain     *Domain `thrift:"domain,2" json:"domain"`
+	User       *User   `thrift:"user,3" json:"user"`
+	UserAgent  string  `thrift:"userAgent,4" json:"userAgent"`
+	RemoteAddr string  `thrift:"remoteAddr,5" json:"remoteAddr"`
+	CreatedOn  string  `thrift:"createdOn,6" json:"createdOn"`
+	UpdatedOn  string  `thrift:"updatedOn,7" json:"updatedOn"`
+	ExpiresOn  string  `thrift:"expiresOn,8" json:"expiresOn"`
 }
 
 func NewSession() *Session {
@@ -290,6 +397,26 @@ func (p *Session) GetUser() *User {
 		return Session_User_DEFAULT
 	}
 	return p.User
+}
+
+func (p *Session) GetUserAgent() string {
+	return p.UserAgent
+}
+
+func (p *Session) GetRemoteAddr() string {
+	return p.RemoteAddr
+}
+
+func (p *Session) GetCreatedOn() string {
+	return p.CreatedOn
+}
+
+func (p *Session) GetUpdatedOn() string {
+	return p.UpdatedOn
+}
+
+func (p *Session) GetExpiresOn() string {
+	return p.ExpiresOn
 }
 func (p *Session) IsSetDomain() bool {
 	return p.Domain != nil
@@ -322,6 +449,26 @@ func (p *Session) Read(iprot thrift.TProtocol) error {
 			}
 		case 3:
 			if err := p.ReadField3(iprot); err != nil {
+				return err
+			}
+		case 4:
+			if err := p.ReadField4(iprot); err != nil {
+				return err
+			}
+		case 5:
+			if err := p.ReadField5(iprot); err != nil {
+				return err
+			}
+		case 6:
+			if err := p.ReadField6(iprot); err != nil {
+				return err
+			}
+		case 7:
+			if err := p.ReadField7(iprot); err != nil {
+				return err
+			}
+		case 8:
+			if err := p.ReadField8(iprot); err != nil {
 				return err
 			}
 		default:
@@ -364,6 +511,51 @@ func (p *Session) ReadField3(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *Session) ReadField4(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 4: %s", err)
+	} else {
+		p.UserAgent = v
+	}
+	return nil
+}
+
+func (p *Session) ReadField5(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 5: %s", err)
+	} else {
+		p.RemoteAddr = v
+	}
+	return nil
+}
+
+func (p *Session) ReadField6(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 6: %s", err)
+	} else {
+		p.CreatedOn = v
+	}
+	return nil
+}
+
+func (p *Session) ReadField7(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 7: %s", err)
+	} else {
+		p.UpdatedOn = v
+	}
+	return nil
+}
+
+func (p *Session) ReadField8(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 8: %s", err)
+	} else {
+		p.ExpiresOn = v
+	}
+	return nil
+}
+
 func (p *Session) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("Session"); err != nil {
 		return fmt.Errorf("%T write struct begin error: %s", p, err)
@@ -375,6 +567,21 @@ func (p *Session) Write(oprot thrift.TProtocol) error {
 		return err
 	}
 	if err := p.writeField3(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField4(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField5(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField6(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField7(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField8(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -425,6 +632,71 @@ func (p *Session) writeField3(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
+func (p *Session) writeField4(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("userAgent", thrift.STRING, 4); err != nil {
+		return fmt.Errorf("%T write field begin error 4:userAgent: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.UserAgent)); err != nil {
+		return fmt.Errorf("%T.userAgent (4) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 4:userAgent: %s", p, err)
+	}
+	return err
+}
+
+func (p *Session) writeField5(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("remoteAddr", thrift.STRING, 5); err != nil {
+		return fmt.Errorf("%T write field begin error 5:remoteAddr: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.RemoteAddr)); err != nil {
+		return fmt.Errorf("%T.remoteAddr (5) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 5:remoteAddr: %s", p, err)
+	}
+	return err
+}
+
+func (p *Session) writeField6(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("createdOn", thrift.STRING, 6); err != nil {
+		return fmt.Errorf("%T write field begin error 6:createdOn: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.CreatedOn)); err != nil {
+		return fmt.Errorf("%T.createdOn (6) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 6:createdOn: %s", p, err)
+	}
+	return err
+}
+
+func (p *Session) writeField7(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("updatedOn", thrift.STRING, 7); err != nil {
+		return fmt.Errorf("%T write field begin error 7:updatedOn: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.UpdatedOn)); err != nil {
+		return fmt.Errorf("%T.updatedOn (7) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 7:updatedOn: %s", p, err)
+	}
+	return err
+}
+
+func (p *Session) writeField8(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("expiresOn", thrift.STRING, 8); err != nil {
+		return fmt.Errorf("%T write field begin error 8:expiresOn: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.ExpiresOn)); err != nil {
+		return fmt.Errorf("%T.expiresOn (8) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 8:expiresOn: %s", p, err)
+	}
+	return err
+}
+
 func (p *Session) String() string {
 	if p == nil {
 		return "<nil>"
@@ -433,11 +705,16 @@ func (p *Session) String() string {
 }
 
 type ServerError struct {
-	Msg string `thrift:"msg,1" json:"msg"`
+	Code string `thrift:"code,1" json:"code"`
+	Msg  string `thrift:"msg,2" json:"msg"`
 }
 
 func NewServerError() *ServerError {
 	return &ServerError{}
+}
+
+func (p *ServerError) GetCode() string {
+	return p.Code
 }
 
 func (p *ServerError) GetMsg() string {
@@ -460,6 +737,10 @@ func (p *ServerError) Read(iprot thrift.TProtocol) error {
 			if err := p.ReadField1(iprot); err != nil {
 				return err
 			}
+		case 2:
+			if err := p.ReadField2(iprot); err != nil {
+				return err
+			}
 		default:
 			if err := iprot.Skip(fieldTypeId); err != nil {
 				return err
@@ -479,6 +760,15 @@ func (p *ServerError) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return fmt.Errorf("error reading field 1: %s", err)
 	} else {
+		p.Code = v
+	}
+	return nil
+}
+
+func (p *ServerError) ReadField2(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 2: %s", err)
+	} else {
 		p.Msg = v
 	}
 	return nil
@@ -491,6 +781,9 @@ func (p *ServerError) Write(oprot thrift.TProtocol) error {
 	if err := p.writeField1(oprot); err != nil {
 		return err
 	}
+	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
 	if err := oprot.WriteFieldStop(); err != nil {
 		return fmt.Errorf("write field stop error: %s", err)
 	}
@@ -501,14 +794,27 @@ func (p *ServerError) Write(oprot thrift.TProtocol) error {
 }
 
 func (p *ServerError) writeField1(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("msg", thrift.STRING, 1); err != nil {
-		return fmt.Errorf("%T write field begin error 1:msg: %s", p, err)
+	if err := oprot.WriteFieldBegin("code", thrift.STRING, 1); err != nil {
+		return fmt.Errorf("%T write field begin error 1:code: %s", p, err)
 	}
-	if err := oprot.WriteString(string(p.Msg)); err != nil {
-		return fmt.Errorf("%T.msg (1) field write error: %s", p, err)
+	if err := oprot.WriteString(string(p.Code)); err != nil {
+		return fmt.Errorf("%T.code (1) field write error: %s", p, err)
 	}
 	if err := oprot.WriteFieldEnd(); err != nil {
-		return fmt.Errorf("%T write field end error 1:msg: %s", p, err)
+		return fmt.Errorf("%T write field end error 1:code: %s", p, err)
+	}
+	return err
+}
+
+func (p *ServerError) writeField2(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("msg", thrift.STRING, 2); err != nil {
+		return fmt.Errorf("%T write field begin error 2:msg: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.Msg)); err != nil {
+		return fmt.Errorf("%T.msg (2) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 2:msg: %s", p, err)
 	}
 	return err
 }
@@ -525,11 +831,16 @@ func (p *ServerError) Error() string {
 }
 
 type BadRequest struct {
-	Msg string `thrift:"msg,1" json:"msg"`
+	Code string `thrift:"code,1" json:"code"`
+	Msg  string `thrift:"msg,2" json:"msg"`
 }
 
 func NewBadRequest() *BadRequest {
 	return &BadRequest{}
+}
+
+func (p *BadRequest) GetCode() string {
+	return p.Code
 }
 
 func (p *BadRequest) GetMsg() string {
@@ -552,6 +863,10 @@ func (p *BadRequest) Read(iprot thrift.TProtocol) error {
 			if err := p.ReadField1(iprot); err != nil {
 				return err
 			}
+		case 2:
+			if err := p.ReadField2(iprot); err != nil {
+				return err
+			}
 		default:
 			if err := iprot.Skip(fieldTypeId); err != nil {
 				return err
@@ -571,6 +886,15 @@ func (p *BadRequest) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return fmt.Errorf("error reading field 1: %s", err)
 	} else {
+		p.Code = v
+	}
+	return nil
+}
+
+func (p *BadRequest) ReadField2(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 2: %s", err)
+	} else {
 		p.Msg = v
 	}
 	return nil
@@ -583,6 +907,9 @@ func (p *BadRequest) Write(oprot thrift.TProtocol) error {
 	if err := p.writeField1(oprot); err != nil {
 		return err
 	}
+	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
 	if err := oprot.WriteFieldStop(); err != nil {
 		return fmt.Errorf("write field stop error: %s", err)
 	}
@@ -593,14 +920,27 @@ func (p *BadRequest) Write(oprot thrift.TProtocol) error {
 }
 
 func (p *BadRequest) writeField1(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("msg", thrift.STRING, 1); err != nil {
-		return fmt.Errorf("%T write field begin error 1:msg: %s", p, err)
+	if err := oprot.WriteFieldBegin("code", thrift.STRING, 1); err != nil {
+		return fmt.Errorf("%T write field begin error 1:code: %s", p, err)
 	}
-	if err := oprot.WriteString(string(p.Msg)); err != nil {
-		return fmt.Errorf("%T.msg (1) field write error: %s", p, err)
+	if err := oprot.WriteString(string(p.Code)); err != nil {
+		return fmt.Errorf("%T.code (1) field write error: %s", p, err)
 	}
 	if err := oprot.WriteFieldEnd(); err != nil {
-		return fmt.Errorf("%T write field end error 1:msg: %s", p, err)
+		return fmt.Errorf("%T write field end error 1:code: %s", p, err)
+	}
+	return err
+}
+
+func (p *BadRequest) writeField2(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("msg", thrift.STRING, 2); err != nil {
+		return fmt.Errorf("%T write field begin error 2:msg: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.Msg)); err != nil {
+		return fmt.Errorf("%T.msg (2) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 2:msg: %s", p, err)
 	}
 	return err
 }
@@ -617,11 +957,16 @@ func (p *BadRequest) Error() string {
 }
 
 type Forbidden struct {
-	Msg string `thrift:"msg,1" json:"msg"`
+	Code string `thrift:"code,1" json:"code"`
+	Msg  string `thrift:"msg,2" json:"msg"`
 }
 
 func NewForbidden() *Forbidden {
 	return &Forbidden{}
+}
+
+func (p *Forbidden) GetCode() string {
+	return p.Code
 }
 
 func (p *Forbidden) GetMsg() string {
@@ -644,6 +989,10 @@ func (p *Forbidden) Read(iprot thrift.TProtocol) error {
 			if err := p.ReadField1(iprot); err != nil {
 				return err
 			}
+		case 2:
+			if err := p.ReadField2(iprot); err != nil {
+				return err
+			}
 		default:
 			if err := iprot.Skip(fieldTypeId); err != nil {
 				return err
@@ -663,6 +1012,15 @@ func (p *Forbidden) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return fmt.Errorf("error reading field 1: %s", err)
 	} else {
+		p.Code = v
+	}
+	return nil
+}
+
+func (p *Forbidden) ReadField2(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 2: %s", err)
+	} else {
 		p.Msg = v
 	}
 	return nil
@@ -675,6 +1033,9 @@ func (p *Forbidden) Write(oprot thrift.TProtocol) error {
 	if err := p.writeField1(oprot); err != nil {
 		return err
 	}
+	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
 	if err := oprot.WriteFieldStop(); err != nil {
 		return fmt.Errorf("write field stop error: %s", err)
 	}
@@ -685,14 +1046,27 @@ func (p *Forbidden) Write(oprot thrift.TProtocol) error {
 }
 
 func (p *Forbidden) writeField1(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("msg", thrift.STRING, 1); err != nil {
-		return fmt.Errorf("%T write field begin error 1:msg: %s", p, err)
+	if err := oprot.WriteFieldBegin("code", thrift.STRING, 1); err != nil {
+		return fmt.Errorf("%T write field begin error 1:code: %s", p, err)
 	}
-	if err := oprot.WriteString(string(p.Msg)); err != nil {
-		return fmt.Errorf("%T.msg (1) field write error: %s", p, err)
+	if err := oprot.WriteString(string(p.Code)); err != nil {
+		return fmt.Errorf("%T.code (1) field write error: %s", p, err)
 	}
 	if err := oprot.WriteFieldEnd(); err != nil {
-		return fmt.Errorf("%T write field end error 1:msg: %s", p, err)
+		return fmt.Errorf("%T write field end error 1:code: %s", p, err)
+	}
+	return err
+}
+
+func (p *Forbidden) writeField2(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("msg", thrift.STRING, 2); err != nil {
+		return fmt.Errorf("%T write field begin error 2:msg: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.Msg)); err != nil {
+		return fmt.Errorf("%T.msg (2) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 2:msg: %s", p, err)
 	}
 	return err
 }

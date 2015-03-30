@@ -21,7 +21,7 @@ func Usage() {
 	fmt.Fprintln(os.Stderr, "Usage of ", os.Args[0], " [-h host:port] [-u url] [-f[ramed]] function [arg1 [arg2...]]:")
 	flag.PrintDefaults()
 	fmt.Fprintln(os.Stderr, "\nFunctions:")
-	fmt.Fprintln(os.Stderr, "  Session createSession(string domainID, string name, string password)")
+	fmt.Fprintln(os.Stderr, "  Session createSession(string domain, string name, string password, string userAgent, string remoteAddr)")
 	fmt.Fprintln(os.Stderr, "  bool checkSession(string sessionID)")
 	fmt.Fprintln(os.Stderr, "  bool deleteSession(string sessionID)")
 	fmt.Fprintln(os.Stderr)
@@ -119,8 +119,8 @@ func main() {
 
 	switch cmd {
 	case "createSession":
-		if flag.NArg()-1 != 3 {
-			fmt.Fprintln(os.Stderr, "CreateSession requires 3 args")
+		if flag.NArg()-1 != 5 {
+			fmt.Fprintln(os.Stderr, "CreateSession requires 5 args")
 			flag.Usage()
 		}
 		argvalue0 := flag.Arg(1)
@@ -129,7 +129,11 @@ func main() {
 		value1 := argvalue1
 		argvalue2 := flag.Arg(3)
 		value2 := argvalue2
-		fmt.Print(client.CreateSession(value0, value1, value2))
+		argvalue3 := flag.Arg(4)
+		value3 := argvalue3
+		argvalue4 := flag.Arg(5)
+		value4 := argvalue4
+		fmt.Print(client.CreateSession(value0, value1, value2, value3, value4))
 		fmt.Print("\n")
 		break
 	case "checkSession":

@@ -17,10 +17,12 @@ var _ = bytes.Equal
 type Authenticator interface { //Authenticator service
 
 	// Parameters:
-	//  - DomainID
+	//  - Domain
 	//  - Name
 	//  - Password
-	CreateSession(domainID string, name string, password string) (r *Session, err error)
+	//  - UserAgent
+	//  - RemoteAddr
+	CreateSession(domain string, name string, password string, userAgent string, remoteAddr string) (r *Session, err error)
 	// Parameters:
 	//  - SessionID
 	CheckSession(sessionID string) (r bool, err error)
@@ -57,17 +59,19 @@ func NewAuthenticatorClientProtocol(t thrift.TTransport, iprot thrift.TProtocol,
 }
 
 // Parameters:
-//  - DomainID
+//  - Domain
 //  - Name
 //  - Password
-func (p *AuthenticatorClient) CreateSession(domainID string, name string, password string) (r *Session, err error) {
-	if err = p.sendCreateSession(domainID, name, password); err != nil {
+//  - UserAgent
+//  - RemoteAddr
+func (p *AuthenticatorClient) CreateSession(domain string, name string, password string, userAgent string, remoteAddr string) (r *Session, err error) {
+	if err = p.sendCreateSession(domain, name, password, userAgent, remoteAddr); err != nil {
 		return
 	}
 	return p.recvCreateSession()
 }
 
-func (p *AuthenticatorClient) sendCreateSession(domainID string, name string, password string) (err error) {
+func (p *AuthenticatorClient) sendCreateSession(domain string, name string, password string, userAgent string, remoteAddr string) (err error) {
 	oprot := p.OutputProtocol
 	if oprot == nil {
 		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -78,9 +82,11 @@ func (p *AuthenticatorClient) sendCreateSession(domainID string, name string, pa
 		return
 	}
 	args := CreateSessionArgs{
-		DomainID: domainID,
-		Name:     name,
-		Password: password,
+		Domain:     domain,
+		Name:       name,
+		Password:   password,
+		UserAgent:  userAgent,
+		RemoteAddr: remoteAddr,
 	}
 	if err = args.Write(oprot); err != nil {
 		return
@@ -363,7 +369,7 @@ func (p *authenticatorProcessorCreateSession) Process(seqId int32, iprot, oprot 
 	result := CreateSessionResult{}
 	var retval *Session
 	var err2 error
-	if retval, err2 = p.handler.CreateSession(args.DomainID, args.Name, args.Password); err2 != nil {
+	if retval, err2 = p.handler.CreateSession(args.Domain, args.Name, args.Password, args.UserAgent, args.RemoteAddr); err2 != nil {
 		switch v := err2.(type) {
 		case *ServerError:
 			result.Error1 = v
@@ -517,17 +523,19 @@ func (p *authenticatorProcessorDeleteSession) Process(seqId int32, iprot, oprot 
 // HELPER FUNCTIONS AND STRUCTURES
 
 type CreateSessionArgs struct {
-	DomainID string `thrift:"domainID,1" json:"domainID"`
-	Name     string `thrift:"name,2" json:"name"`
-	Password string `thrift:"password,3" json:"password"`
+	Domain     string `thrift:"domain,1" json:"domain"`
+	Name       string `thrift:"name,2" json:"name"`
+	Password   string `thrift:"password,3" json:"password"`
+	UserAgent  string `thrift:"userAgent,4" json:"userAgent"`
+	RemoteAddr string `thrift:"remoteAddr,5" json:"remoteAddr"`
 }
 
 func NewCreateSessionArgs() *CreateSessionArgs {
 	return &CreateSessionArgs{}
 }
 
-func (p *CreateSessionArgs) GetDomainID() string {
-	return p.DomainID
+func (p *CreateSessionArgs) GetDomain() string {
+	return p.Domain
 }
 
 func (p *CreateSessionArgs) GetName() string {
@@ -536,6 +544,14 @@ func (p *CreateSessionArgs) GetName() string {
 
 func (p *CreateSessionArgs) GetPassword() string {
 	return p.Password
+}
+
+func (p *CreateSessionArgs) GetUserAgent() string {
+	return p.UserAgent
+}
+
+func (p *CreateSessionArgs) GetRemoteAddr() string {
+	return p.RemoteAddr
 }
 func (p *CreateSessionArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
@@ -562,6 +578,14 @@ func (p *CreateSessionArgs) Read(iprot thrift.TProtocol) error {
 			if err := p.ReadField3(iprot); err != nil {
 				return err
 			}
+		case 4:
+			if err := p.ReadField4(iprot); err != nil {
+				return err
+			}
+		case 5:
+			if err := p.ReadField5(iprot); err != nil {
+				return err
+			}
 		default:
 			if err := iprot.Skip(fieldTypeId); err != nil {
 				return err
@@ -581,7 +605,7 @@ func (p *CreateSessionArgs) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return fmt.Errorf("error reading field 1: %s", err)
 	} else {
-		p.DomainID = v
+		p.Domain = v
 	}
 	return nil
 }
@@ -604,6 +628,24 @@ func (p *CreateSessionArgs) ReadField3(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *CreateSessionArgs) ReadField4(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 4: %s", err)
+	} else {
+		p.UserAgent = v
+	}
+	return nil
+}
+
+func (p *CreateSessionArgs) ReadField5(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 5: %s", err)
+	} else {
+		p.RemoteAddr = v
+	}
+	return nil
+}
+
 func (p *CreateSessionArgs) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("createSession_args"); err != nil {
 		return fmt.Errorf("%T write struct begin error: %s", p, err)
@@ -617,6 +659,12 @@ func (p *CreateSessionArgs) Write(oprot thrift.TProtocol) error {
 	if err := p.writeField3(oprot); err != nil {
 		return err
 	}
+	if err := p.writeField4(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField5(oprot); err != nil {
+		return err
+	}
 	if err := oprot.WriteFieldStop(); err != nil {
 		return fmt.Errorf("write field stop error: %s", err)
 	}
@@ -627,14 +675,14 @@ func (p *CreateSessionArgs) Write(oprot thrift.TProtocol) error {
 }
 
 func (p *CreateSessionArgs) writeField1(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("domainID", thrift.STRING, 1); err != nil {
-		return fmt.Errorf("%T write field begin error 1:domainID: %s", p, err)
+	if err := oprot.WriteFieldBegin("domain", thrift.STRING, 1); err != nil {
+		return fmt.Errorf("%T write field begin error 1:domain: %s", p, err)
 	}
-	if err := oprot.WriteString(string(p.DomainID)); err != nil {
-		return fmt.Errorf("%T.domainID (1) field write error: %s", p, err)
+	if err := oprot.WriteString(string(p.Domain)); err != nil {
+		return fmt.Errorf("%T.domain (1) field write error: %s", p, err)
 	}
 	if err := oprot.WriteFieldEnd(); err != nil {
-		return fmt.Errorf("%T write field end error 1:domainID: %s", p, err)
+		return fmt.Errorf("%T write field end error 1:domain: %s", p, err)
 	}
 	return err
 }
@@ -661,6 +709,32 @@ func (p *CreateSessionArgs) writeField3(oprot thrift.TProtocol) (err error) {
 	}
 	if err := oprot.WriteFieldEnd(); err != nil {
 		return fmt.Errorf("%T write field end error 3:password: %s", p, err)
+	}
+	return err
+}
+
+func (p *CreateSessionArgs) writeField4(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("userAgent", thrift.STRING, 4); err != nil {
+		return fmt.Errorf("%T write field begin error 4:userAgent: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.UserAgent)); err != nil {
+		return fmt.Errorf("%T.userAgent (4) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 4:userAgent: %s", p, err)
+	}
+	return err
+}
+
+func (p *CreateSessionArgs) writeField5(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("remoteAddr", thrift.STRING, 5); err != nil {
+		return fmt.Errorf("%T write field begin error 5:remoteAddr: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.RemoteAddr)); err != nil {
+		return fmt.Errorf("%T.remoteAddr (5) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 5:remoteAddr: %s", p, err)
 	}
 	return err
 }
