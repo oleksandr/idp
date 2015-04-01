@@ -20,12 +20,13 @@ func startRESTfulServer(exitCh chan bool,
 	domainInteractor usecases.DomainInteractor,
 	userInteractor usecases.UserInteractor,
 	sessionInteractor usecases.SessionInteractor) {
+
 	// Web handlers
 	//domainHandler := new(web.DomainWebHandler)
 	//domainHandler.DomainInteractor = domainInteractor
 	//userHandler := new(web.UserWebHandler)
 	//userHandler.UserInteractor = userInteractor
-	sessionHandler := new(web.SessionWebHandler)
+	sessionHandler := web.NewSessionWebHandler()
 	sessionHandler.SessionInteractor = sessionInteractor
 	sessionHandler.UserInteractor = userInteractor
 	sessionHandler.DomainInteractor = domainInteractor

@@ -39,6 +39,10 @@ func main() {
 	if config.SQLTraceOn() {
 		dbmap.TraceOn("[gorp]", log.New(os.Stderr, "", log.LstdFlags))
 	}
+	err = dbmap.Db.Ping()
+	if err != nil {
+		log.Fatalln("Failed to connect to DB:", err.Error())
+	}
 
 	// Interactors
 	domainInteractor = new(usecases.DomainInteractorImpl)
@@ -283,10 +287,6 @@ func main() {
 						cli.StringFlag{
 							Name:  "remote",
 							Usage: "Remote address for a session",
-						},
-						cli.DurationFlag{
-							Name:  "ttl",
-							Usage: "TTL of the session (e.g. 30s, 10m, 1h)",
 						},
 					},
 				},

@@ -1,6 +1,7 @@
 package web
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -14,52 +15,55 @@ import (
 func NewAuthenticationHandler(interactor usecases.SessionInteractor) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			// Extract the token from header
-			s := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
-			if len(s) != 2 {
-				respondWithError(w, http.StatusUnauthorized, "Unauthorized", "Token is missing")
-				return
-			}
-			if s[0] != "Token" {
-				respondWithError(w, http.StatusUnauthorized, "Unauthorized", "Authentication schema is not supported")
-				return
-			}
-			p := strings.SplitN(s[1], "=", 2)
-			if len(p) != 2 {
-				respondWithError(w, http.StatusUnauthorized, "Unauthorized", "Authentication schema is not supported")
-				return
-			}
-			authToken := strings.TrimSpace(strings.Trim(p[1], "\" "))
-			if authToken == "" {
-				respondWithError(w, http.StatusUnauthorized, "Unauthorized", "Empty token")
-				return
-			}
+			err := func() (*Session, error) {
+				// Extract the token from header
+				s := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
+				if len(s) != 2 {
+					return errors.New("token is missing")
+				}
+				if s[0] != "Token" {
+					return errors.New("authentication schema is not supported")
+				}
+				p := strings.SplitN(s[1], "=", 2)
+				if len(p) != 2 {
+					return errors.New("authentication schema is not supported")
+				}
+				authToken := strings.TrimSpace(strings.Trim(p[1], "\" "))
+				if authToken == "" {
+					return errors.New("empty token")
+				}
 
-			// Look up the session by token and other attributes
-			remoteAddr := helpers.RemoteAddrFromRequest(r)
-			userAgent := r.UserAgent()
-			session, err := interactor.Find(authToken)
-			if err != nil || session.UserAgent != userAgent || session.RemoteAddr != remoteAddr {
-				respondWithError(w, http.StatusUnauthorized, "Unauthorized", "Session not found")
-				return
-			}
+				// Look up the session by token and other attributes
+				remoteAddr := helpers.RemoteAddrFromRequest(r)
+				userAgent := r.UserAgent()
+				session, err := interactor.Find(authToken)
+				if err != nil || session.UserAgent != userAgent || session.RemoteAddr != remoteAddr {
+					return errors.New("sessio not found")
+				}
 
-			// Validate session/user/domain
-			if !session.IsValid() || session.IsExpired() {
-				respondWithError(w, http.StatusUnauthorized, "Unauthorized", "Session is invalid/expired")
-				return
-			}
-			if !session.Domain.Enabled {
-				respondWithError(w, http.StatusUnauthorized, "Unauthorized", "Domain is disabled")
-				return
-			}
-			if !session.User.Enabled {
-				respondWithError(w, http.StatusUnauthorized, "Unauthorized", "User account is disabled")
-				return
-			}
+				// Validate session/user/domain
+				if !session.IsValid() || session.IsExpired() {
+					return errors.New("invalid/expired session")
+				}
+				if !session.Domain.Enabled {
+					return errors.New("domain is disabled")
+					return
+				}
+				if !session.User.Enabled {
+					return errors.New("user is disabled")
+				}
 
-			// Retain session
-			interactor.Retain(*session)
+				// Retain session
+				err = interactor.Retain(*session)
+				if err != nil {
+					return error.New(err.Error())
+				}
+			}()
+
+			if err != nil {
+				respondWithError(w, http.StatusUnauthorized, "Unauthorized", err.Error())
+				return
+			}
 
 			// Save session into current request context
 			context.Set(r, config.CtxSessionKey, *session)

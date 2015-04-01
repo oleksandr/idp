@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"text/tabwriter"
-	"time"
 
 	"github.com/codegangsta/cli"
 	"github.com/oleksandr/idp/entities"
@@ -24,14 +23,14 @@ func listSessions(c *cli.Context) {
 
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 0, 8, 1, '\t', 0)
-	fmt.Fprintln(w, "ID\tDOMAIN\tUSER\tEXPIRED")
-	fmt.Fprintln(w, "---\t\t\t")
+	fmt.Fprintln(w, "ID\tDOMAIN\tUSER\tEXPIRED\tREMOTE\tUSER-AGENT")
+	fmt.Fprintln(w, "---\t\t\t\t\t")
 
 	for {
 		collection, err = sessionInteractor.List(pager, sorter)
 		assertError(err)
 		for _, s := range collection.Sessions {
-			fmt.Fprintf(w, "%v\t%v\t%v\t%v\n", s.ID, s.Domain.Name, s.User.Name, s.IsExpired())
+			fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t%v\n", s.ID, s.Domain.Name, s.User.Name, s.IsExpired(), s.RemoteAddr, s.UserAgent)
 		}
 		w.Flush()
 		if !paginator.HasNextPage {
@@ -65,22 +64,16 @@ func addSession(c *cli.Context) {
 		assertError(fmt.Errorf("You need to specify domain ID using --domain option"))
 	}
 
-	user, err := userInteractor.Find(c.String("user"))
-	assertError(err)
+	user := entities.BasicUser{}
+	user.ID = c.String("user")
+	domain := entities.BasicDomain{}
+	domain.ID = c.String("domain")
 
-	domain, err := domainInteractor.Find(c.String("domain"))
-	assertError(err)
-
-	s := entities.NewSession(*user, *domain, c.String("agent"), c.String("remote"))
-	s.ExpiresOn.Time = time.Now().UTC().Add(c.Duration("ttl"))
-	if s.IsExpired() {
-		assertError(fmt.Errorf("Provide a valid TTL value. You cannot created an expired session"))
-	}
-
-	err = sessionInteractor.Create(*s)
+	s, err := sessionInteractor.Create(domain, user, c.String("agent"), c.String("remote"))
 	assertError(err)
 
 	fmt.Printf("Session %v created\n", s.ID)
+
 }
 
 func removeSession(c *cli.Context) {

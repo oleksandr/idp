@@ -16,6 +16,8 @@ import (
 )
 
 func main() {
+	log.SetPrefix("[main] ")
+
 	dbmap, err := db.InitDB(os.Getenv(config.EnvIDPDriver), os.Getenv(config.EnvIDPDSN))
 	if err != nil {
 		log.Fatalln(err.Error())
@@ -24,7 +26,10 @@ func main() {
 	if config.SQLTraceOn() {
 		dbmap.TraceOn("", log.New(os.Stderr, "[gorp] ", log.LstdFlags))
 	}
-	log.SetPrefix("[main] ")
+	err = dbmap.Db.Ping()
+	if err != nil {
+		log.Fatalln("Failed to connect to DB:", err.Error())
+	}
 
 	//
 	// Core setup

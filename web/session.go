@@ -2,7 +2,9 @@ package web
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/context"
 	"github.com/oleksandr/idp/config"
@@ -34,9 +36,17 @@ type SessionResource struct {
 // SessionWebHandler is a collection of CRUD methods for Sessions API
 //
 type SessionWebHandler struct {
+	log               *log.Logger
 	SessionInteractor usecases.SessionInteractor
 	UserInteractor    usecases.UserInteractor
 	DomainInteractor  usecases.DomainInteractor
+}
+
+// NewSessionWebHandler creates new SessionWebHandler
+func NewSessionWebHandler() *SessionWebHandler {
+	return &SessionWebHandler{
+		log: log.New(os.Stdout, "[SessionHandler] ", log.LstdFlags),
+	}
 }
 
 // Create opens a new session if none exists
