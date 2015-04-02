@@ -43,24 +43,32 @@ struct Session {
  * Exception represents internal server error
  */
 exception ServerError {
-    1: string code,
-    2: string msg
+    1: string msg
+    2: string cause
 }
 
 /**
  * Exception represents invalid arguments submitted error
  */
 exception BadRequestError {
-    1: string code,
-    2: string msg
+    1: string msg,
+    2: string cause
 }
 
 /**
  * Exception represents forbidden error
  */
 exception ForbiddenError {
-    1: string code,
-    2: string msg
+    1: string msg,
+    2: string cause
+}
+
+/**
+ * Exception represents not found error
+ */
+exception NotFoundError {
+    1: string msg,
+    2: string cause
 }
 
 /**
@@ -72,17 +80,26 @@ service Authenticator {
                           2:string name,
                           3:string password,
                           4:string userAgent,
-                          5:string remoteAddr) throws (1:ServerError error1, 2:BadRequestError error2, 3:ForbiddenError error3),
+                          5:string remoteAddr) throws (1:ServerError error1,
+                                                       2:BadRequestError error2,
+                                                       3:ForbiddenError error3,
+                                                       4:NotFoundError error4),
 
     # Checking existing session by ID
     bool checkSession(1:string sessionID,
                       2:string userAgent,
-                      3:string remoteAddr) throws (1:ServerError error1, 2:BadRequestError error2, 3:ForbiddenError error3),
+                      3:string remoteAddr) throws (1:ServerError error1,
+                                                       2:BadRequestError error2,
+                                                       3:ForbiddenError error3,
+                                                       4:NotFoundError error4),
 
     # Delete existing session by ID
     bool deleteSession(1:string sessionID,
                        2:string userAgent,
-                       3:string remoteAddr) throws (1:ServerError error1, 2:BadRequestError error2, 3:ForbiddenError error3)
+                       3:string remoteAddr) throws (1:ServerError error1,
+                                                       2:BadRequestError error2,
+                                                       3:ForbiddenError error3,
+                                                       4:NotFoundError error4),
 
 }
 

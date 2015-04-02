@@ -140,7 +140,7 @@ func (inter *UserInteractorImpl) Update(user entities.BasicUser, addDomainIDs []
 		return errs.NewUseCaseError(errs.ErrorTypeOperational, "Failed to begin transaction", err)
 	}
 
-	_, err = tx.Update(&u)
+	_, err = tx.Update(u)
 	if err != nil {
 		tx.Rollback()
 		return errs.NewUseCaseError(errs.ErrorTypeConflict, "Failed to update user", err)

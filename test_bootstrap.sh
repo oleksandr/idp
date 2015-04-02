@@ -1,16 +1,14 @@
 #!/bin/bash -e
 
-# Reset DB
-#rm -rf db.sqlite3 && sqlite3 db.sqlite3 < sql/sqlite3.sql
-#psql -f sql/postgres.sql idp_dev
-#mysql -u root idp_dev < sql/mysql.sql
-idp-cli db drop --please
-idp-cli db create
-
 #
 # Environment
 #
 . env.sh
+
+# Reset DB
+idp-cli db drop --please
+idp-cli db create
+
 
 #
 # Domains
@@ -32,6 +30,8 @@ ID4=$(echo "$output" | awk '{ print $2}')
 
 output=$(idp-cli domains add --name=delete.me --description="Domain to delete" --disable)
 ID5=$(echo "$output" | awk '{ print $2}')
+
+idp-cli domains update --disable $ID5
 
 echo "ok"
 
@@ -75,6 +75,8 @@ output=$(idp-cli users add \
     --disable)
 U5=$(echo "$output" | awk '{ print $2}')
 
+idp-cli users update --disable $U2
+
 echo "ok"
 
 #
@@ -108,6 +110,8 @@ echo "Assigning permissions to roles... "
 
 idp-cli roles update --add "*" admin
 
+echo ">>>1"
+
 idp-cli roles update \
     --add "login" \
     --add "users.*" \
@@ -116,6 +120,9 @@ idp-cli roles update \
     --add "posts.create" \
     --add "posts.delete" \
     manager
+
+echo ">>>2"
+
 idp-cli roles update \
     --add "login" \
     --add "domains.read" \

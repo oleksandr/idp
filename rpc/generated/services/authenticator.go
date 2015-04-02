@@ -144,6 +144,9 @@ func (p *AuthenticatorClient) recvCreateSession() (value *Session, err error) {
 	} else if result.Error3 != nil {
 		err = result.Error3
 		return
+	} else if result.Error4 != nil {
+		err = result.Error4
+		return
 	}
 	value = result.GetSuccess()
 	return
@@ -226,6 +229,9 @@ func (p *AuthenticatorClient) recvCheckSession() (value bool, err error) {
 		return
 	} else if result.Error3 != nil {
 		err = result.Error3
+		return
+	} else if result.Error4 != nil {
+		err = result.Error4
 		return
 	}
 	value = result.GetSuccess()
@@ -310,6 +316,9 @@ func (p *AuthenticatorClient) recvDeleteSession() (value bool, err error) {
 	} else if result.Error3 != nil {
 		err = result.Error3
 		return
+	} else if result.Error4 != nil {
+		err = result.Error4
+		return
 	}
 	value = result.GetSuccess()
 	return
@@ -389,6 +398,8 @@ func (p *authenticatorProcessorCreateSession) Process(seqId int32, iprot, oprot 
 			result.Error2 = v
 		case *ForbiddenError:
 			result.Error3 = v
+		case *NotFoundError:
+			result.Error4 = v
 		default:
 			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing createSession: "+err2.Error())
 			oprot.WriteMessageBegin("createSession", thrift.EXCEPTION, seqId)
@@ -446,6 +457,8 @@ func (p *authenticatorProcessorCheckSession) Process(seqId int32, iprot, oprot t
 			result.Error2 = v
 		case *ForbiddenError:
 			result.Error3 = v
+		case *NotFoundError:
+			result.Error4 = v
 		default:
 			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing checkSession: "+err2.Error())
 			oprot.WriteMessageBegin("checkSession", thrift.EXCEPTION, seqId)
@@ -503,6 +516,8 @@ func (p *authenticatorProcessorDeleteSession) Process(seqId int32, iprot, oprot 
 			result.Error2 = v
 		case *ForbiddenError:
 			result.Error3 = v
+		case *NotFoundError:
+			result.Error4 = v
 		default:
 			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing deleteSession: "+err2.Error())
 			oprot.WriteMessageBegin("deleteSession", thrift.EXCEPTION, seqId)
@@ -763,6 +778,7 @@ type CreateSessionResult struct {
 	Error1  *ServerError     `thrift:"error1,1" json:"error1"`
 	Error2  *BadRequestError `thrift:"error2,2" json:"error2"`
 	Error3  *ForbiddenError  `thrift:"error3,3" json:"error3"`
+	Error4  *NotFoundError   `thrift:"error4,4" json:"error4"`
 }
 
 func NewCreateSessionResult() *CreateSessionResult {
@@ -804,6 +820,15 @@ func (p *CreateSessionResult) GetError3() *ForbiddenError {
 	}
 	return p.Error3
 }
+
+var CreateSessionResult_Error4_DEFAULT *NotFoundError
+
+func (p *CreateSessionResult) GetError4() *NotFoundError {
+	if !p.IsSetError4() {
+		return CreateSessionResult_Error4_DEFAULT
+	}
+	return p.Error4
+}
 func (p *CreateSessionResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -818,6 +843,10 @@ func (p *CreateSessionResult) IsSetError2() bool {
 
 func (p *CreateSessionResult) IsSetError3() bool {
 	return p.Error3 != nil
+}
+
+func (p *CreateSessionResult) IsSetError4() bool {
+	return p.Error4 != nil
 }
 
 func (p *CreateSessionResult) Read(iprot thrift.TProtocol) error {
@@ -847,6 +876,10 @@ func (p *CreateSessionResult) Read(iprot thrift.TProtocol) error {
 			}
 		case 3:
 			if err := p.ReadField3(iprot); err != nil {
+				return err
+			}
+		case 4:
+			if err := p.ReadField4(iprot); err != nil {
 				return err
 			}
 		default:
@@ -896,6 +929,14 @@ func (p *CreateSessionResult) ReadField3(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *CreateSessionResult) ReadField4(iprot thrift.TProtocol) error {
+	p.Error4 = &NotFoundError{}
+	if err := p.Error4.Read(iprot); err != nil {
+		return fmt.Errorf("%T error reading struct: %s", p.Error4, err)
+	}
+	return nil
+}
+
 func (p *CreateSessionResult) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("createSession_result"); err != nil {
 		return fmt.Errorf("%T write struct begin error: %s", p, err)
@@ -910,6 +951,9 @@ func (p *CreateSessionResult) Write(oprot thrift.TProtocol) error {
 		return err
 	}
 	if err := p.writeField3(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField4(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -976,6 +1020,21 @@ func (p *CreateSessionResult) writeField3(oprot thrift.TProtocol) (err error) {
 		}
 		if err := oprot.WriteFieldEnd(); err != nil {
 			return fmt.Errorf("%T write field end error 3:error3: %s", p, err)
+		}
+	}
+	return err
+}
+
+func (p *CreateSessionResult) writeField4(oprot thrift.TProtocol) (err error) {
+	if p.IsSetError4() {
+		if err := oprot.WriteFieldBegin("error4", thrift.STRUCT, 4); err != nil {
+			return fmt.Errorf("%T write field begin error 4:error4: %s", p, err)
+		}
+		if err := p.Error4.Write(oprot); err != nil {
+			return fmt.Errorf("%T error writing struct: %s", p.Error4, err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return fmt.Errorf("%T write field end error 4:error4: %s", p, err)
 		}
 	}
 	return err
@@ -1149,6 +1208,7 @@ type CheckSessionResult struct {
 	Error1  *ServerError     `thrift:"error1,1" json:"error1"`
 	Error2  *BadRequestError `thrift:"error2,2" json:"error2"`
 	Error3  *ForbiddenError  `thrift:"error3,3" json:"error3"`
+	Error4  *NotFoundError   `thrift:"error4,4" json:"error4"`
 }
 
 func NewCheckSessionResult() *CheckSessionResult {
@@ -1190,6 +1250,15 @@ func (p *CheckSessionResult) GetError3() *ForbiddenError {
 	}
 	return p.Error3
 }
+
+var CheckSessionResult_Error4_DEFAULT *NotFoundError
+
+func (p *CheckSessionResult) GetError4() *NotFoundError {
+	if !p.IsSetError4() {
+		return CheckSessionResult_Error4_DEFAULT
+	}
+	return p.Error4
+}
 func (p *CheckSessionResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -1204,6 +1273,10 @@ func (p *CheckSessionResult) IsSetError2() bool {
 
 func (p *CheckSessionResult) IsSetError3() bool {
 	return p.Error3 != nil
+}
+
+func (p *CheckSessionResult) IsSetError4() bool {
+	return p.Error4 != nil
 }
 
 func (p *CheckSessionResult) Read(iprot thrift.TProtocol) error {
@@ -1233,6 +1306,10 @@ func (p *CheckSessionResult) Read(iprot thrift.TProtocol) error {
 			}
 		case 3:
 			if err := p.ReadField3(iprot); err != nil {
+				return err
+			}
+		case 4:
+			if err := p.ReadField4(iprot); err != nil {
 				return err
 			}
 		default:
@@ -1283,6 +1360,14 @@ func (p *CheckSessionResult) ReadField3(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *CheckSessionResult) ReadField4(iprot thrift.TProtocol) error {
+	p.Error4 = &NotFoundError{}
+	if err := p.Error4.Read(iprot); err != nil {
+		return fmt.Errorf("%T error reading struct: %s", p.Error4, err)
+	}
+	return nil
+}
+
 func (p *CheckSessionResult) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("checkSession_result"); err != nil {
 		return fmt.Errorf("%T write struct begin error: %s", p, err)
@@ -1297,6 +1382,9 @@ func (p *CheckSessionResult) Write(oprot thrift.TProtocol) error {
 		return err
 	}
 	if err := p.writeField3(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField4(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -1363,6 +1451,21 @@ func (p *CheckSessionResult) writeField3(oprot thrift.TProtocol) (err error) {
 		}
 		if err := oprot.WriteFieldEnd(); err != nil {
 			return fmt.Errorf("%T write field end error 3:error3: %s", p, err)
+		}
+	}
+	return err
+}
+
+func (p *CheckSessionResult) writeField4(oprot thrift.TProtocol) (err error) {
+	if p.IsSetError4() {
+		if err := oprot.WriteFieldBegin("error4", thrift.STRUCT, 4); err != nil {
+			return fmt.Errorf("%T write field begin error 4:error4: %s", p, err)
+		}
+		if err := p.Error4.Write(oprot); err != nil {
+			return fmt.Errorf("%T error writing struct: %s", p.Error4, err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return fmt.Errorf("%T write field end error 4:error4: %s", p, err)
 		}
 	}
 	return err
@@ -1536,6 +1639,7 @@ type DeleteSessionResult struct {
 	Error1  *ServerError     `thrift:"error1,1" json:"error1"`
 	Error2  *BadRequestError `thrift:"error2,2" json:"error2"`
 	Error3  *ForbiddenError  `thrift:"error3,3" json:"error3"`
+	Error4  *NotFoundError   `thrift:"error4,4" json:"error4"`
 }
 
 func NewDeleteSessionResult() *DeleteSessionResult {
@@ -1577,6 +1681,15 @@ func (p *DeleteSessionResult) GetError3() *ForbiddenError {
 	}
 	return p.Error3
 }
+
+var DeleteSessionResult_Error4_DEFAULT *NotFoundError
+
+func (p *DeleteSessionResult) GetError4() *NotFoundError {
+	if !p.IsSetError4() {
+		return DeleteSessionResult_Error4_DEFAULT
+	}
+	return p.Error4
+}
 func (p *DeleteSessionResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -1591,6 +1704,10 @@ func (p *DeleteSessionResult) IsSetError2() bool {
 
 func (p *DeleteSessionResult) IsSetError3() bool {
 	return p.Error3 != nil
+}
+
+func (p *DeleteSessionResult) IsSetError4() bool {
+	return p.Error4 != nil
 }
 
 func (p *DeleteSessionResult) Read(iprot thrift.TProtocol) error {
@@ -1620,6 +1737,10 @@ func (p *DeleteSessionResult) Read(iprot thrift.TProtocol) error {
 			}
 		case 3:
 			if err := p.ReadField3(iprot); err != nil {
+				return err
+			}
+		case 4:
+			if err := p.ReadField4(iprot); err != nil {
 				return err
 			}
 		default:
@@ -1670,6 +1791,14 @@ func (p *DeleteSessionResult) ReadField3(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *DeleteSessionResult) ReadField4(iprot thrift.TProtocol) error {
+	p.Error4 = &NotFoundError{}
+	if err := p.Error4.Read(iprot); err != nil {
+		return fmt.Errorf("%T error reading struct: %s", p.Error4, err)
+	}
+	return nil
+}
+
 func (p *DeleteSessionResult) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("deleteSession_result"); err != nil {
 		return fmt.Errorf("%T write struct begin error: %s", p, err)
@@ -1684,6 +1813,9 @@ func (p *DeleteSessionResult) Write(oprot thrift.TProtocol) error {
 		return err
 	}
 	if err := p.writeField3(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField4(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -1750,6 +1882,21 @@ func (p *DeleteSessionResult) writeField3(oprot thrift.TProtocol) (err error) {
 		}
 		if err := oprot.WriteFieldEnd(); err != nil {
 			return fmt.Errorf("%T write field end error 3:error3: %s", p, err)
+		}
+	}
+	return err
+}
+
+func (p *DeleteSessionResult) writeField4(oprot thrift.TProtocol) (err error) {
+	if p.IsSetError4() {
+		if err := oprot.WriteFieldBegin("error4", thrift.STRUCT, 4); err != nil {
+			return fmt.Errorf("%T write field begin error 4:error4: %s", p, err)
+		}
+		if err := p.Error4.Write(oprot); err != nil {
+			return fmt.Errorf("%T error writing struct: %s", p.Error4, err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return fmt.Errorf("%T write field end error 4:error4: %s", p, err)
 		}
 	}
 	return err

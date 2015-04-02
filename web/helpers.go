@@ -3,10 +3,12 @@ package web
 import (
 	"net/http"
 	"strings"
+
+	"github.com/oleksandr/idp/errs"
 )
 
 // RemoteAddrFromRequest returns remote address of the requesting client
-func RemoteAddrFromRequest(r *http.Request) string {
+func remoteAddrFromRequest(r *http.Request) string {
 	remoteAddr := r.Header.Get("X-Real-IP")
 	if remoteAddr == "" {
 		remoteAddr = r.Header.Get("X-Forwarded-For")
@@ -19,4 +21,19 @@ func RemoteAddrFromRequest(r *http.Request) string {
 		}
 	}
 	return remoteAddr
+}
+
+func errorToHTTPStatus(err *errs.Error) int {
+	switch err.Type {
+	case errs.ErrorTypeForbidden:
+		return http.StatusForbidden
+	case errs.ErrorTypeConflict:
+		return http.StatusBadRequest
+	case errs.ErrorTypeNotFound:
+		return http.StatusNotFound
+	case errs.ErrorTypeOperational:
+		fallthrough
+	default:
+		return http.StatusInternalServerError
+	}
 }

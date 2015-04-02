@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/context"
 	"github.com/oleksandr/idp/config"
 	"github.com/oleksandr/idp/entities"
-	"github.com/oleksandr/idp/helpers"
+	"github.com/oleksandr/idp/errs"
 	"github.com/oleksandr/idp/usecases"
 )
 
@@ -55,64 +55,31 @@ func (handler *SessionWebHandler) Create(w http.ResponseWriter, r *http.Request)
 	var form SessionForm
 	err := json.NewDecoder(r.Body).Decode(&form)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Failed to decode request data", err.Error())
+		respondWithError(w, http.StatusBadRequest, "Failed to decode request data", err)
 		return
 	}
 
-	// Resolve user and domain
-	var (
-		domain *entities.BasicDomain
-		user   *entities.BasicUser
-	)
-
-	if form.Session.Domain.ID != "" {
-		domain, err = handler.DomainInteractor.Find(form.Session.Domain.ID)
-	} else {
-		domain, err = handler.DomainInteractor.FindByName(form.Session.Domain.Name)
-	}
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Failed to create session", err.Error())
-		return
-	} else if !domain.Enabled {
-		respondWithError(w, http.StatusForbidden, "Failed to create session", "Domain is disabled")
-		return
-	}
-
-	user, err = handler.UserInteractor.FindByNameInDomain(form.Session.User.Name, domain.ID)
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Failed to create session", err.Error())
-		return
-	} else if !user.Enabled {
-		respondWithError(w, http.StatusForbidden, "Failed to create session", "User is disabled")
-		return
-	}
-	if !user.IsPassword(form.Session.User.Password) {
-		respondWithError(w, http.StatusBadRequest, "Failed to create session", "Incorrect name/password")
-		return
-	}
-
+	// Prepare arguments
+	user := entities.BasicUser{}
+	user.Name = form.Session.User.Name
+	domain := entities.BasicDomain{}
+	domain.ID = form.Session.Domain.ID
+	domain.Name = form.Session.Domain.Name
 	userAgent := r.UserAgent()
-	remoteAddr := helpers.RemoteAddrFromRequest(r)
+	remoteAddr := remoteAddrFromRequest(r)
 
-	// Lookup existing session
-	session, err := handler.SessionInteractor.FindUserSpecific(user.ID, domain.ID, userAgent, remoteAddr)
-	if session != nil && !session.IsExpired() {
-		handler.SessionInteractor.Retain(*session)
-		w.WriteHeader(http.StatusFound)
+	// Create session
+	session, err := handler.SessionInteractor.CreateWithPassword(domain, user, form.Session.User.Password, userAgent, remoteAddr)
+	if err == nil {
+		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(SessionResource{Session: *session})
 		return
 	}
 
-	// Create new session
-	session = entities.NewSession(*user, *domain, userAgent, remoteAddr)
-	err = handler.SessionInteractor.Create(*session)
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Failed to create session", err.Error())
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(SessionResource{Session: *session})
+	// Handle errors
+	e := err.(*errs.Error)
+	handler.log.Println(e.Error())
+	respondWithError(w, errorToHTTPStatus(e), "Failed to create session", e)
 }
 
 // Check validates if current session is valid
@@ -137,8 +104,14 @@ func (handler *SessionWebHandler) Retrieve(w http.ResponseWriter, r *http.Reques
 // Delete deletes current session
 func (handler *SessionWebHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	if s, ok := context.Get(r, config.CtxSessionKey).(entities.Session); ok {
-		handler.SessionInteractor.Delete(s)
-		w.WriteHeader(http.StatusAccepted)
+		err := handler.SessionInteractor.Delete(s)
+		if err == nil {
+			w.WriteHeader(http.StatusAccepted)
+			return
+		}
+		e := err.(*errs.Error)
+		handler.log.Println(e.Error())
+		respondWithError(w, errorToHTTPStatus(e), "Failed to delete session", e)
 		return
 	}
 	w.WriteHeader(http.StatusForbidden)

@@ -69,9 +69,9 @@ func (inter *DomainInteractorImpl) Update(domain entities.BasicDomain) error {
 	d.Enabled = domain.Enabled
 	d.UpdatedOn = time.Now().UTC()
 
-	_, err = inter.DBMap.Update(&d)
+	_, err = inter.DBMap.Update(d)
 	if err != nil {
-		return errs.NewUseCaseError(errs.ErrorTypeConflict, "Failed to updated domain", err)
+		return errs.NewUseCaseError(errs.ErrorTypeConflict, "Failed to update domain", err)
 	}
 	return nil
 }

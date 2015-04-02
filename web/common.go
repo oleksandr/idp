@@ -13,25 +13,28 @@ import (
 	"github.com/gorilla/context"
 	"github.com/oleksandr/idp/config"
 	"github.com/oleksandr/idp/entities"
+	"github.com/oleksandr/idp/errs"
 )
 
 //
 // Error structure for handler's error responses
 //
 type Error struct {
-	Code    int                    `json:"code"`
 	Title   string                 `json:"title"`
 	Message string                 `json:"message"`
 	Details map[string]interface{} `json:"details,omitempty"`
 }
 
-func respondWithError(w http.ResponseWriter, statusCode int, title, message string) {
-	e := new(Error)
-	e.Code = statusCode
-	e.Title = title
-	e.Message = message
+func respondWithError(w http.ResponseWriter, statusCode int, title string, err error) {
+	d := new(Error)
+	d.Title = title
+	if e, ok := err.(*errs.Error); ok {
+		d.Message = e.Msg
+	} else {
+		d.Message = err.Error()
+	}
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(map[string]*Error{"error": e})
+	json.NewEncoder(w).Encode(map[string]*Error{"error": d})
 }
 
 // InfoHeadersHandler is a dummy middleware to add extra headers to the response

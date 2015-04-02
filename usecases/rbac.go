@@ -175,7 +175,7 @@ func (inter *RBACInteractorImpl) UpdateRole(role entities.BasicRole) error {
 	r.Description = role.Description
 	r.Enabled = role.Enabled
 
-	_, err = inter.DBMap.Update(&r)
+	_, err = inter.DBMap.Update(r)
 	if err != nil {
 		return errs.NewUseCaseError(errs.ErrorTypeConflict, "Failed to update a role", err)
 	}
