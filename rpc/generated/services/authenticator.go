@@ -27,6 +27,11 @@ type Authenticator interface { //Authenticator service
 	//  - SessionID
 	//  - UserAgent
 	//  - RemoteAddr
+	GetSession(sessionID string, userAgent string, remoteAddr string) (r *Session, err error)
+	// Parameters:
+	//  - SessionID
+	//  - UserAgent
+	//  - RemoteAddr
 	CheckSession(sessionID string, userAgent string, remoteAddr string) (r bool, err error)
 	// Parameters:
 	//  - SessionID
@@ -156,6 +161,92 @@ func (p *AuthenticatorClient) recvCreateSession() (value *Session, err error) {
 //  - SessionID
 //  - UserAgent
 //  - RemoteAddr
+func (p *AuthenticatorClient) GetSession(sessionID string, userAgent string, remoteAddr string) (r *Session, err error) {
+	if err = p.sendGetSession(sessionID, userAgent, remoteAddr); err != nil {
+		return
+	}
+	return p.recvGetSession()
+}
+
+func (p *AuthenticatorClient) sendGetSession(sessionID string, userAgent string, remoteAddr string) (err error) {
+	oprot := p.OutputProtocol
+	if oprot == nil {
+		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
+		p.OutputProtocol = oprot
+	}
+	p.SeqId++
+	if err = oprot.WriteMessageBegin("getSession", thrift.CALL, p.SeqId); err != nil {
+		return
+	}
+	args := GetSessionArgs{
+		SessionID:  sessionID,
+		UserAgent:  userAgent,
+		RemoteAddr: remoteAddr,
+	}
+	if err = args.Write(oprot); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageEnd(); err != nil {
+		return
+	}
+	return oprot.Flush()
+}
+
+func (p *AuthenticatorClient) recvGetSession() (value *Session, err error) {
+	iprot := p.InputProtocol
+	if iprot == nil {
+		iprot = p.ProtocolFactory.GetProtocol(p.Transport)
+		p.InputProtocol = iprot
+	}
+	_, mTypeId, seqId, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error2 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error3 error
+		error3, err = error2.Read(iprot)
+		if err != nil {
+			return
+		}
+		if err = iprot.ReadMessageEnd(); err != nil {
+			return
+		}
+		err = error3
+		return
+	}
+	if p.SeqId != seqId {
+		err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "getSession failed: out of sequence response")
+		return
+	}
+	result := GetSessionResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	if result.Error1 != nil {
+		err = result.Error1
+		return
+	} else if result.Error2 != nil {
+		err = result.Error2
+		return
+	} else if result.Error3 != nil {
+		err = result.Error3
+		return
+	} else if result.Error4 != nil {
+		err = result.Error4
+		return
+	}
+	value = result.GetSuccess()
+	return
+}
+
+// Parameters:
+//  - SessionID
+//  - UserAgent
+//  - RemoteAddr
 func (p *AuthenticatorClient) CheckSession(sessionID string, userAgent string, remoteAddr string) (r bool, err error) {
 	if err = p.sendCheckSession(sessionID, userAgent, remoteAddr); err != nil {
 		return
@@ -198,16 +289,16 @@ func (p *AuthenticatorClient) recvCheckSession() (value bool, err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error2 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error3 error
-		error3, err = error2.Read(iprot)
+		error4 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error5 error
+		error5, err = error4.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error3
+		err = error5
 		return
 	}
 	if p.SeqId != seqId {
@@ -284,16 +375,16 @@ func (p *AuthenticatorClient) recvDeleteSession() (value bool, err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error4 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error5 error
-		error5, err = error4.Read(iprot)
+		error6 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error7 error
+		error7, err = error6.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error5
+		err = error7
 		return
 	}
 	if p.SeqId != seqId {
@@ -344,11 +435,12 @@ func (p *AuthenticatorProcessor) ProcessorMap() map[string]thrift.TProcessorFunc
 
 func NewAuthenticatorProcessor(handler Authenticator) *AuthenticatorProcessor {
 
-	self6 := &AuthenticatorProcessor{handler: handler, processorMap: make(map[string]thrift.TProcessorFunction)}
-	self6.processorMap["createSession"] = &authenticatorProcessorCreateSession{handler: handler}
-	self6.processorMap["checkSession"] = &authenticatorProcessorCheckSession{handler: handler}
-	self6.processorMap["deleteSession"] = &authenticatorProcessorDeleteSession{handler: handler}
-	return self6
+	self8 := &AuthenticatorProcessor{handler: handler, processorMap: make(map[string]thrift.TProcessorFunction)}
+	self8.processorMap["createSession"] = &authenticatorProcessorCreateSession{handler: handler}
+	self8.processorMap["getSession"] = &authenticatorProcessorGetSession{handler: handler}
+	self8.processorMap["checkSession"] = &authenticatorProcessorCheckSession{handler: handler}
+	self8.processorMap["deleteSession"] = &authenticatorProcessorDeleteSession{handler: handler}
+	return self8
 }
 
 func (p *AuthenticatorProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -361,12 +453,12 @@ func (p *AuthenticatorProcessor) Process(iprot, oprot thrift.TProtocol) (success
 	}
 	iprot.Skip(thrift.STRUCT)
 	iprot.ReadMessageEnd()
-	x7 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
+	x9 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
 	oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)
-	x7.Write(oprot)
+	x9.Write(oprot)
 	oprot.WriteMessageEnd()
 	oprot.Flush()
-	return false, x7
+	return false, x9
 
 }
 
@@ -412,6 +504,65 @@ func (p *authenticatorProcessorCreateSession) Process(seqId int32, iprot, oprot 
 		result.Success = retval
 	}
 	if err2 = oprot.WriteMessageBegin("createSession", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+
+type authenticatorProcessorGetSession struct {
+	handler Authenticator
+}
+
+func (p *authenticatorProcessorGetSession) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := GetSessionArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("getSession", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush()
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	result := GetSessionResult{}
+	var retval *Session
+	var err2 error
+	if retval, err2 = p.handler.GetSession(args.SessionID, args.UserAgent, args.RemoteAddr); err2 != nil {
+		switch v := err2.(type) {
+		case *ServerError:
+			result.Error1 = v
+		case *BadRequestError:
+			result.Error2 = v
+		case *ForbiddenError:
+			result.Error3 = v
+		case *NotFoundError:
+			result.Error4 = v
+		default:
+			x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing getSession: "+err2.Error())
+			oprot.WriteMessageBegin("getSession", thrift.EXCEPTION, seqId)
+			x.Write(oprot)
+			oprot.WriteMessageEnd()
+			oprot.Flush()
+			return true, err2
+		}
+	} else {
+		result.Success = retval
+	}
+	if err2 = oprot.WriteMessageBegin("getSession", thrift.REPLY, seqId); err2 != nil {
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -1045,6 +1196,436 @@ func (p *CreateSessionResult) String() string {
 		return "<nil>"
 	}
 	return fmt.Sprintf("CreateSessionResult(%+v)", *p)
+}
+
+type GetSessionArgs struct {
+	SessionID  string `thrift:"sessionID,1" json:"sessionID"`
+	UserAgent  string `thrift:"userAgent,2" json:"userAgent"`
+	RemoteAddr string `thrift:"remoteAddr,3" json:"remoteAddr"`
+}
+
+func NewGetSessionArgs() *GetSessionArgs {
+	return &GetSessionArgs{}
+}
+
+func (p *GetSessionArgs) GetSessionID() string {
+	return p.SessionID
+}
+
+func (p *GetSessionArgs) GetUserAgent() string {
+	return p.UserAgent
+}
+
+func (p *GetSessionArgs) GetRemoteAddr() string {
+	return p.RemoteAddr
+}
+func (p *GetSessionArgs) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return fmt.Errorf("%T read error: %s", p, err)
+	}
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return fmt.Errorf("%T field %d read error: %s", p, fieldId, err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 1:
+			if err := p.ReadField1(iprot); err != nil {
+				return err
+			}
+		case 2:
+			if err := p.ReadField2(iprot); err != nil {
+				return err
+			}
+		case 3:
+			if err := p.ReadField3(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return fmt.Errorf("%T read struct end error: %s", p, err)
+	}
+	return nil
+}
+
+func (p *GetSessionArgs) ReadField1(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 1: %s", err)
+	} else {
+		p.SessionID = v
+	}
+	return nil
+}
+
+func (p *GetSessionArgs) ReadField2(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 2: %s", err)
+	} else {
+		p.UserAgent = v
+	}
+	return nil
+}
+
+func (p *GetSessionArgs) ReadField3(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return fmt.Errorf("error reading field 3: %s", err)
+	} else {
+		p.RemoteAddr = v
+	}
+	return nil
+}
+
+func (p *GetSessionArgs) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("getSession_args"); err != nil {
+		return fmt.Errorf("%T write struct begin error: %s", p, err)
+	}
+	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField3(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return fmt.Errorf("write field stop error: %s", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return fmt.Errorf("write struct stop error: %s", err)
+	}
+	return nil
+}
+
+func (p *GetSessionArgs) writeField1(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("sessionID", thrift.STRING, 1); err != nil {
+		return fmt.Errorf("%T write field begin error 1:sessionID: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.SessionID)); err != nil {
+		return fmt.Errorf("%T.sessionID (1) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 1:sessionID: %s", p, err)
+	}
+	return err
+}
+
+func (p *GetSessionArgs) writeField2(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("userAgent", thrift.STRING, 2); err != nil {
+		return fmt.Errorf("%T write field begin error 2:userAgent: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.UserAgent)); err != nil {
+		return fmt.Errorf("%T.userAgent (2) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 2:userAgent: %s", p, err)
+	}
+	return err
+}
+
+func (p *GetSessionArgs) writeField3(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("remoteAddr", thrift.STRING, 3); err != nil {
+		return fmt.Errorf("%T write field begin error 3:remoteAddr: %s", p, err)
+	}
+	if err := oprot.WriteString(string(p.RemoteAddr)); err != nil {
+		return fmt.Errorf("%T.remoteAddr (3) field write error: %s", p, err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return fmt.Errorf("%T write field end error 3:remoteAddr: %s", p, err)
+	}
+	return err
+}
+
+func (p *GetSessionArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("GetSessionArgs(%+v)", *p)
+}
+
+type GetSessionResult struct {
+	Success *Session         `thrift:"success,0" json:"success"`
+	Error1  *ServerError     `thrift:"error1,1" json:"error1"`
+	Error2  *BadRequestError `thrift:"error2,2" json:"error2"`
+	Error3  *ForbiddenError  `thrift:"error3,3" json:"error3"`
+	Error4  *NotFoundError   `thrift:"error4,4" json:"error4"`
+}
+
+func NewGetSessionResult() *GetSessionResult {
+	return &GetSessionResult{}
+}
+
+var GetSessionResult_Success_DEFAULT *Session
+
+func (p *GetSessionResult) GetSuccess() *Session {
+	if !p.IsSetSuccess() {
+		return GetSessionResult_Success_DEFAULT
+	}
+	return p.Success
+}
+
+var GetSessionResult_Error1_DEFAULT *ServerError
+
+func (p *GetSessionResult) GetError1() *ServerError {
+	if !p.IsSetError1() {
+		return GetSessionResult_Error1_DEFAULT
+	}
+	return p.Error1
+}
+
+var GetSessionResult_Error2_DEFAULT *BadRequestError
+
+func (p *GetSessionResult) GetError2() *BadRequestError {
+	if !p.IsSetError2() {
+		return GetSessionResult_Error2_DEFAULT
+	}
+	return p.Error2
+}
+
+var GetSessionResult_Error3_DEFAULT *ForbiddenError
+
+func (p *GetSessionResult) GetError3() *ForbiddenError {
+	if !p.IsSetError3() {
+		return GetSessionResult_Error3_DEFAULT
+	}
+	return p.Error3
+}
+
+var GetSessionResult_Error4_DEFAULT *NotFoundError
+
+func (p *GetSessionResult) GetError4() *NotFoundError {
+	if !p.IsSetError4() {
+		return GetSessionResult_Error4_DEFAULT
+	}
+	return p.Error4
+}
+func (p *GetSessionResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *GetSessionResult) IsSetError1() bool {
+	return p.Error1 != nil
+}
+
+func (p *GetSessionResult) IsSetError2() bool {
+	return p.Error2 != nil
+}
+
+func (p *GetSessionResult) IsSetError3() bool {
+	return p.Error3 != nil
+}
+
+func (p *GetSessionResult) IsSetError4() bool {
+	return p.Error4 != nil
+}
+
+func (p *GetSessionResult) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return fmt.Errorf("%T read error: %s", p, err)
+	}
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return fmt.Errorf("%T field %d read error: %s", p, fieldId, err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 0:
+			if err := p.ReadField0(iprot); err != nil {
+				return err
+			}
+		case 1:
+			if err := p.ReadField1(iprot); err != nil {
+				return err
+			}
+		case 2:
+			if err := p.ReadField2(iprot); err != nil {
+				return err
+			}
+		case 3:
+			if err := p.ReadField3(iprot); err != nil {
+				return err
+			}
+		case 4:
+			if err := p.ReadField4(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return fmt.Errorf("%T read struct end error: %s", p, err)
+	}
+	return nil
+}
+
+func (p *GetSessionResult) ReadField0(iprot thrift.TProtocol) error {
+	p.Success = &Session{}
+	if err := p.Success.Read(iprot); err != nil {
+		return fmt.Errorf("%T error reading struct: %s", p.Success, err)
+	}
+	return nil
+}
+
+func (p *GetSessionResult) ReadField1(iprot thrift.TProtocol) error {
+	p.Error1 = &ServerError{}
+	if err := p.Error1.Read(iprot); err != nil {
+		return fmt.Errorf("%T error reading struct: %s", p.Error1, err)
+	}
+	return nil
+}
+
+func (p *GetSessionResult) ReadField2(iprot thrift.TProtocol) error {
+	p.Error2 = &BadRequestError{}
+	if err := p.Error2.Read(iprot); err != nil {
+		return fmt.Errorf("%T error reading struct: %s", p.Error2, err)
+	}
+	return nil
+}
+
+func (p *GetSessionResult) ReadField3(iprot thrift.TProtocol) error {
+	p.Error3 = &ForbiddenError{}
+	if err := p.Error3.Read(iprot); err != nil {
+		return fmt.Errorf("%T error reading struct: %s", p.Error3, err)
+	}
+	return nil
+}
+
+func (p *GetSessionResult) ReadField4(iprot thrift.TProtocol) error {
+	p.Error4 = &NotFoundError{}
+	if err := p.Error4.Read(iprot); err != nil {
+		return fmt.Errorf("%T error reading struct: %s", p.Error4, err)
+	}
+	return nil
+}
+
+func (p *GetSessionResult) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("getSession_result"); err != nil {
+		return fmt.Errorf("%T write struct begin error: %s", p, err)
+	}
+	if err := p.writeField0(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField1(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField3(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField4(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return fmt.Errorf("write field stop error: %s", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return fmt.Errorf("write struct stop error: %s", err)
+	}
+	return nil
+}
+
+func (p *GetSessionResult) writeField0(oprot thrift.TProtocol) (err error) {
+	if p.IsSetSuccess() {
+		if err := oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+			return fmt.Errorf("%T write field begin error 0:success: %s", p, err)
+		}
+		if err := p.Success.Write(oprot); err != nil {
+			return fmt.Errorf("%T error writing struct: %s", p.Success, err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return fmt.Errorf("%T write field end error 0:success: %s", p, err)
+		}
+	}
+	return err
+}
+
+func (p *GetSessionResult) writeField1(oprot thrift.TProtocol) (err error) {
+	if p.IsSetError1() {
+		if err := oprot.WriteFieldBegin("error1", thrift.STRUCT, 1); err != nil {
+			return fmt.Errorf("%T write field begin error 1:error1: %s", p, err)
+		}
+		if err := p.Error1.Write(oprot); err != nil {
+			return fmt.Errorf("%T error writing struct: %s", p.Error1, err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return fmt.Errorf("%T write field end error 1:error1: %s", p, err)
+		}
+	}
+	return err
+}
+
+func (p *GetSessionResult) writeField2(oprot thrift.TProtocol) (err error) {
+	if p.IsSetError2() {
+		if err := oprot.WriteFieldBegin("error2", thrift.STRUCT, 2); err != nil {
+			return fmt.Errorf("%T write field begin error 2:error2: %s", p, err)
+		}
+		if err := p.Error2.Write(oprot); err != nil {
+			return fmt.Errorf("%T error writing struct: %s", p.Error2, err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return fmt.Errorf("%T write field end error 2:error2: %s", p, err)
+		}
+	}
+	return err
+}
+
+func (p *GetSessionResult) writeField3(oprot thrift.TProtocol) (err error) {
+	if p.IsSetError3() {
+		if err := oprot.WriteFieldBegin("error3", thrift.STRUCT, 3); err != nil {
+			return fmt.Errorf("%T write field begin error 3:error3: %s", p, err)
+		}
+		if err := p.Error3.Write(oprot); err != nil {
+			return fmt.Errorf("%T error writing struct: %s", p.Error3, err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return fmt.Errorf("%T write field end error 3:error3: %s", p, err)
+		}
+	}
+	return err
+}
+
+func (p *GetSessionResult) writeField4(oprot thrift.TProtocol) (err error) {
+	if p.IsSetError4() {
+		if err := oprot.WriteFieldBegin("error4", thrift.STRUCT, 4); err != nil {
+			return fmt.Errorf("%T write field begin error 4:error4: %s", p, err)
+		}
+		if err := p.Error4.Write(oprot); err != nil {
+			return fmt.Errorf("%T error writing struct: %s", p.Error4, err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return fmt.Errorf("%T write field end error 4:error4: %s", p, err)
+		}
+	}
+	return err
+}
+
+func (p *GetSessionResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("GetSessionResult(%+v)", *p)
 }
 
 type CheckSessionArgs struct {

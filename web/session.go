@@ -78,7 +78,7 @@ func (handler *SessionWebHandler) Create(w http.ResponseWriter, r *http.Request)
 
 	// Handle errors
 	e := err.(*errs.Error)
-	handler.log.Println(e.Error())
+	handler.log.Printf("%v: %v", form, err)
 	respondWithError(w, errorToHTTPStatus(e), "Failed to create session", e)
 }
 

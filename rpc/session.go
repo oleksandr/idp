@@ -47,9 +47,46 @@ func (handler *AuthenticatorHandler) CreateSession(domain string, name string, p
 	return nil, errorToServiceError(e)
 }
 
+// GetSession is an implementation of Authentocator's GetSession method
+func (handler *AuthenticatorHandler) GetSession(sessionID string, userAgent string, remoteAddr string) (r *services.Session, err error) {
+	handler.log.Printf("getSession(%v, %v, %v)", sessionID, userAgent, remoteAddr)
+
+	session, err := handler.SessionInteractor.Find(sessionID)
+	if err != nil {
+		e := err.(*errs.Error)
+		return nil, errorToServiceError(e)
+	}
+
+	if !session.Domain.Enabled || !session.User.Enabled {
+		e := services.NewForbiddenError()
+		e.Msg = "Domain and/or user disabled"
+		return nil, e
+	}
+
+	if session.UserAgent != userAgent || session.RemoteAddr != remoteAddr {
+		e := services.NewNotFoundError()
+		e.Msg = "Session not found"
+		return nil, e
+	}
+
+	if session.IsExpired() {
+		e := services.NewForbiddenError()
+		e.Msg = "Session expired"
+		return nil, e
+	}
+
+	err = handler.SessionInteractor.Retain(*session)
+	if err != nil {
+		e := err.(*errs.Error)
+		return nil, errorToServiceError(e)
+	}
+
+	return sessionToResponse(session), nil
+}
+
 // CheckSession is an implementation of Authentocator's CheckSession method
 func (handler *AuthenticatorHandler) CheckSession(sessionID string, userAgent string, remoteAddr string) (r bool, err error) {
-	handler.log.Printf("checkSession(%v)", sessionID)
+	handler.log.Printf("checkSession(%v, %v, %v)", sessionID, userAgent, remoteAddr)
 
 	session, err := handler.SessionInteractor.Find(sessionID)
 	if err != nil {
@@ -86,7 +123,7 @@ func (handler *AuthenticatorHandler) CheckSession(sessionID string, userAgent st
 
 // DeleteSession is an implementation of Authentocator's DeleteSession method
 func (handler *AuthenticatorHandler) DeleteSession(sessionID string, userAgent string, remoteAddr string) (r bool, err error) {
-	handler.log.Printf("deleteSession(%v)", sessionID)
+	handler.log.Printf("deleteSession(%v, %v, %v)", sessionID, userAgent, remoteAddr)
 
 	session, err := handler.SessionInteractor.Find(sessionID)
 	if err != nil {

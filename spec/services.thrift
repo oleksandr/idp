@@ -85,21 +85,29 @@ service Authenticator {
                                                        3:ForbiddenError error3,
                                                        4:NotFoundError error4),
 
+    # Get session by token and client identifiers
+    Session getSession(1:string sessionID,
+                       2:string userAgent,
+                       3:string remoteAddr) throws (1:ServerError error1,
+                                                    2:BadRequestError error2,
+                                                    3:ForbiddenError error3,
+                                                    4:NotFoundError error4),
+
     # Checking existing session by ID
     bool checkSession(1:string sessionID,
                       2:string userAgent,
                       3:string remoteAddr) throws (1:ServerError error1,
-                                                       2:BadRequestError error2,
-                                                       3:ForbiddenError error3,
-                                                       4:NotFoundError error4),
+                                                   2:BadRequestError error2,
+                                                   3:ForbiddenError error3,
+                                                   4:NotFoundError error4),
 
     # Delete existing session by ID
     bool deleteSession(1:string sessionID,
                        2:string userAgent,
                        3:string remoteAddr) throws (1:ServerError error1,
-                                                       2:BadRequestError error2,
-                                                       3:ForbiddenError error3,
-                                                       4:NotFoundError error4),
+                                                    2:BadRequestError error2,
+                                                    3:ForbiddenError error3,
+                                                    4:NotFoundError error4),
 
 }
 
