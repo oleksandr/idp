@@ -41,7 +41,7 @@ func startRPCServer(exitCh chan bool,
 	log.Println("RPC API Server listening", addr)
 	err = server.Serve()
 	if err != nil {
-		log.Println("Error in Serve: %s", err)
+		log.Println("Error in Serve:", err)
 		exitCh <- true
 	}
 }

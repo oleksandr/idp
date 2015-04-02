@@ -112,7 +112,7 @@ func startRESTfulServer(exitCh chan bool,
 	log.Println("RESTful API Server listening", addr)
 	serveErr := s.Serve(listener)
 	if serveErr != nil {
-		log.Println("Error in Serve: %s", serveErr)
+		log.Println("Error in Serve:", serveErr)
 		exitCh <- true
 	}
 }
