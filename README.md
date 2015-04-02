@@ -147,3 +147,5 @@ If the session is not valid the response will be:
 ## Dealing with date and time
 
 The code takes current time in UTC and stores it in database without a timezone. The date and time returned in responses is UTC.
+
+
