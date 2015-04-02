@@ -2,7 +2,9 @@ package web
 
 import (
 	"errors"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gorilla/context"
@@ -13,6 +15,7 @@ import (
 
 // NewAuthenticationHandler create a new handler that handles token-based authentication
 func NewAuthenticationHandler(interactor usecases.SessionInteractor) func(next http.Handler) http.Handler {
+	logger := log.New(os.Stdout, "[auth] ", log.LstdFlags)
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			var (
@@ -26,6 +29,7 @@ func NewAuthenticationHandler(interactor usecases.SessionInteractor) func(next h
 			if err != nil {
 				token, err = tokenFromAuthorizationHeader(r)
 				if err != nil {
+					logger.Println(err.Error())
 					respondWithError(w, http.StatusUnauthorized, "Unauthorized", err)
 					return
 				}
@@ -45,6 +49,7 @@ func NewAuthenticationHandler(interactor usecases.SessionInteractor) func(next h
 				return nil
 			}()
 			if err != nil {
+				logger.Println(err.Error())
 				respondWithError(w, http.StatusUnauthorized, "Unauthorized", err)
 				return
 			}
@@ -52,6 +57,7 @@ func NewAuthenticationHandler(interactor usecases.SessionInteractor) func(next h
 			// Retain session
 			err = interactor.Retain(*session)
 			if err != nil {
+				logger.Println(err.Error())
 				respondWithError(w, http.StatusInternalServerError, "Could not retain session", err)
 				return
 			}
@@ -68,7 +74,7 @@ func NewAuthenticationHandler(interactor usecases.SessionInteractor) func(next h
 
 func tokenFromXHeader(r *http.Request) (string, error) {
 	token := strings.TrimSpace(r.Header.Get("X-Auth-Token"))
-	if token != "" {
+	if token == "" {
 		return "", errors.New("Empty token")
 	}
 	return token, nil
@@ -76,6 +82,7 @@ func tokenFromXHeader(r *http.Request) (string, error) {
 
 func tokenFromAuthorizationHeader(r *http.Request) (string, error) {
 	s := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
+	log.Println(s)
 	if len(s) != 2 {
 		return "", errors.New("Token is missing")
 	}
