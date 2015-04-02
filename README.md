@@ -14,12 +14,12 @@ The package contains 2 commands (executables):
 
 Currently the Simple IdP supports the following RDBMS via standard Go's `database/sql` interface:
 
- * SQLite3 (http://github.com/mattn/go-sqlite3)
- * PostgreSQL (http://github.com/lib/pq)
  * MySQL (http://github.com/go-sql-driver/mysql)
 
-You can find SQL script for your RDBMS to create IdP's database structure in the `sql` folder of the package.
+The following are WORK IN PROGRESS:
 
+ * SQLite3 (http://github.com/mattn/go-sqlite3)
+ * PostgreSQL (http://github.com/lib/pq)
 
 ## Building
 
@@ -35,11 +35,13 @@ The corresponding binaries will be created in your `$GOPATH/bin` directory.
 
 Following the 12-Factor-App methodology (http://12factor.net/) the command line tool (`idp-cli`) and a service itself (`idp-api`) are configured via environment variables. 
 
- * `IDP_ADDR` - an address/port to bind HTTP server to (e.g. `0.0.0.0:8000`)
+ * `IDP_REST_ADDR` - an address/port to bind HTTP server to (e.g. `0.0.0.0:8000`)
+ * `IDP_RPC_ADDR` - an address/port to bind Thrift RPC server to (e.g. `0.0.0.0:8001`)
  * `IDP_SESSION_TTL` - session TTL in minutes (e.g. `30`)
  * `IDP_SECRET_SALT` - password hashing secret salt (set once before deployment)
  * `IDP_DB_Driver` - name of the database driver to use (e.g. `mysql`, `postgres`, `sqlite3`)
  * `IDP_DB_DSN` - connection DSN, which format depends on a specific driver.
+ * `IDP_SQL_TRACE` - dump SQLs into log (`true`/`false`, default `false`)
 
 You can see example of configuration in the included `env.sh` file.
 
@@ -48,7 +50,8 @@ You can see example of configuration in the included `env.sh` file.
 
     $ source env.sh
     $ idp-api
-    2015/03/27 08:55:36 Listening 127.0.0.1:8000
+    [main] 2015/04/02 11:54:47 RESTful API Server listening 127.0.0.1:8000
+    [main] 2015/04/02 11:54:47 RPC API Server listening 127.0.0.1:8001
 
 
 ## Using CLI
@@ -57,7 +60,7 @@ You can see example of configuration in the included `env.sh` file.
     $ idp-cli -h
 
 
-## API
+## RESTful API
 
 For the moment the following resources and methods are available:
 
@@ -82,6 +85,10 @@ Creating a session requires posting the following structure:
 
 As alternative you can use `session.domain.id` instead of a domain's name.
 
+## Apache Thrift API
+
+See `spec/services.thrift` for the services you can consume. Use this file to generate clients for the programming language of your choice.
+
 ## Authentication
 
 You need to include the following header in your HTTP request:
@@ -89,6 +96,11 @@ You need to include the following header in your HTTP request:
     Authorization:"Token token=c25b0ff5-a35c-4f63-8ffa-b218771ad365"
 
 where, `c25b0ff5-a35c-4f63-8ffa-b218771ad365` is a token (session's identifier) receiver after successful session creation (see Example below).
+
+Or you can use `X-Auth-Token` header as show below:
+
+    X-Auth-Token: c25b0ff5-a35c-4f63-8ffa-b218771ad365
+
 
 ## Example
 
