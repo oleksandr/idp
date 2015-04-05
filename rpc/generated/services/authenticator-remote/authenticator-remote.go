@@ -164,6 +164,8 @@ func main() {
 		value2 := argvalue2
 		fmt.Print(client.CheckSession(value0, value1, value2))
 		fmt.Print("\n")
+		fmt.Print(client.CheckSession(value0, value1, value2))
+		fmt.Print("\n")
 		break
 	case "deleteSession":
 		if flag.NArg()-1 != 3 {
