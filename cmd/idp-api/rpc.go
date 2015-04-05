@@ -22,7 +22,7 @@ func startRPCServer(exitCh chan bool,
 	}
 
 	protocolFactory := thrift.NewTBinaryProtocolFactoryDefault()
-	transportFactory := thrift.NewTTransportFactory()
+	transportFactory := thrift.NewTBufferedTransportFactory(1024 * 1024)
 	transport, err := thrift.NewTServerSocket(addr)
 	if err != nil {
 		log.Println("Error creating server transport: %s", err)

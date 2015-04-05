@@ -10,7 +10,7 @@ export IDP_SESSION_TTL=60
 export IDP_SECRET_SALT="842d7e1244b98f667f271a4e4d289772"
 
 # SQL debug
-export IDP_SQL_TRACE=true
+export IDP_SQL_TRACE=false
 
 # MySQL
 export IDP_DB_Driver="mysql"
