@@ -140,13 +140,11 @@ func (inter *SessionInteractorImpl) Retain(session entities.Session) error {
 		return errs.NewUseCaseError(errs.ErrorTypeOperational, "Failed to retain a session", err)
 	}
 
-	c, err := r.RowsAffected()
+	_, err = r.RowsAffected()
 	if err != nil {
 		return errs.NewUseCaseError(errs.ErrorTypeOperational, "Failed to retain a session", err)
 	}
-	if c == 0 {
-		return errs.NewUseCaseError(errs.ErrorTypeNotFound, "No session found to retain by given ID", nil)
-	}
+
 	return err
 }
 
