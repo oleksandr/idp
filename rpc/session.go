@@ -1,33 +1,15 @@
 package rpc
 
 import (
-	"log"
-	"os"
 	"time"
 
 	"github.com/oleksandr/idp/entities"
 	"github.com/oleksandr/idp/errs"
 	"github.com/oleksandr/idp/rpc/generated/services"
-	"github.com/oleksandr/idp/usecases"
 )
 
-// AuthenticatorHandler handles implements Authenticator RPC interface
-type AuthenticatorHandler struct {
-	log               *log.Logger
-	SessionInteractor usecases.SessionInteractor
-	UserInteractor    usecases.UserInteractor
-	DomainInteractor  usecases.DomainInteractor
-}
-
-// NewAuthenticatorHandler creates new AuthenticatorHandler
-func NewAuthenticatorHandler() *AuthenticatorHandler {
-	return &AuthenticatorHandler{
-		log: log.New(os.Stdout, "[rpc] ", log.LstdFlags),
-	}
-}
-
-// CreateSession is an implementation of Authentocator's CreateSession method
-func (handler *AuthenticatorHandler) CreateSession(domain string, name string, password string, userAgent string, remoteAddr string) (r *services.Session, err error) {
+// CreateSession is an implementation of Authenticator's CreateSession method
+func (handler *IdentityProviderHandler) CreateSession(domain string, name string, password string, userAgent string, remoteAddr string) (r *services.Session, err error) {
 	handler.log.Printf("createSession(%v, %v)", domain, name)
 
 	// Prepare arguments
@@ -47,8 +29,8 @@ func (handler *AuthenticatorHandler) CreateSession(domain string, name string, p
 	return nil, errorToServiceError(e)
 }
 
-// GetSession is an implementation of Authentocator's GetSession method
-func (handler *AuthenticatorHandler) GetSession(sessionID string, userAgent string, remoteAddr string) (r *services.Session, err error) {
+// GetSession is an implementation of Authenticator's GetSession method
+func (handler *IdentityProviderHandler) GetSession(sessionID string, userAgent string, remoteAddr string) (r *services.Session, err error) {
 	handler.log.Printf("getSession(%v, %v, %v)", sessionID, userAgent, remoteAddr)
 
 	session, err := handler.SessionInteractor.Find(sessionID)
@@ -58,7 +40,7 @@ func (handler *AuthenticatorHandler) GetSession(sessionID string, userAgent stri
 	}
 
 	if !session.Domain.Enabled || !session.User.Enabled {
-		e := services.NewForbiddenError()
+		e := services.NewUnauthorizedError()
 		e.Msg = "Domain and/or user disabled"
 		return nil, e
 	}
@@ -70,7 +52,7 @@ func (handler *AuthenticatorHandler) GetSession(sessionID string, userAgent stri
 	}
 
 	if session.IsExpired() {
-		e := services.NewForbiddenError()
+		e := services.NewUnauthorizedError()
 		e.Msg = "Session expired"
 		return nil, e
 	}
@@ -84,8 +66,8 @@ func (handler *AuthenticatorHandler) GetSession(sessionID string, userAgent stri
 	return sessionToResponse(session), nil
 }
 
-// CheckSession is an implementation of Authentocator's CheckSession method
-func (handler *AuthenticatorHandler) CheckSession(sessionID string, userAgent string, remoteAddr string) (r bool, err error) {
+// CheckSession is an implementation of Authenticator's CheckSession method
+func (handler *IdentityProviderHandler) CheckSession(sessionID string, userAgent string, remoteAddr string) (r bool, err error) {
 	handler.log.Printf("checkSession(%v, %v, %v)", sessionID, userAgent, remoteAddr)
 
 	session, err := handler.SessionInteractor.Find(sessionID)
@@ -95,7 +77,7 @@ func (handler *AuthenticatorHandler) CheckSession(sessionID string, userAgent st
 	}
 
 	if !session.Domain.Enabled || !session.User.Enabled {
-		e := services.NewForbiddenError()
+		e := services.NewUnauthorizedError()
 		e.Msg = "Domain and/or user disabled"
 		return false, e
 	}
@@ -107,7 +89,7 @@ func (handler *AuthenticatorHandler) CheckSession(sessionID string, userAgent st
 	}
 
 	if session.IsExpired() {
-		e := services.NewForbiddenError()
+		e := services.NewUnauthorizedError()
 		e.Msg = "Session expired"
 		return false, e
 	}
@@ -121,8 +103,8 @@ func (handler *AuthenticatorHandler) CheckSession(sessionID string, userAgent st
 	return true, nil
 }
 
-// DeleteSession is an implementation of Authentocator's DeleteSession method
-func (handler *AuthenticatorHandler) DeleteSession(sessionID string, userAgent string, remoteAddr string) (r bool, err error) {
+// DeleteSession is an implementation of Authenticator's DeleteSession method
+func (handler *IdentityProviderHandler) DeleteSession(sessionID string, userAgent string, remoteAddr string) (r bool, err error) {
 	handler.log.Printf("deleteSession(%v, %v, %v)", sessionID, userAgent, remoteAddr)
 
 	session, err := handler.SessionInteractor.Find(sessionID)
@@ -132,7 +114,7 @@ func (handler *AuthenticatorHandler) DeleteSession(sessionID string, userAgent s
 	}
 
 	if !session.Domain.Enabled || !session.User.Enabled {
-		e := services.NewForbiddenError()
+		e := services.NewUnauthorizedError()
 		e.Msg = "Domain and/or user disabled"
 		return false, e
 	}
@@ -144,7 +126,7 @@ func (handler *AuthenticatorHandler) DeleteSession(sessionID string, userAgent s
 	}
 
 	if session.IsExpired() {
-		e := services.NewForbiddenError()
+		e := services.NewUnauthorizedError()
 		e.Msg = "Session expired"
 		return false, e
 	}

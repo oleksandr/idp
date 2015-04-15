@@ -25,6 +25,8 @@ type RBACInteractor interface {
 	ListPermissionsByRole(roleName string, pager entities.Pager, sorter entities.Sorter) (*entities.BasicPermissionCollection, error)
 	ListRoles(pager entities.Pager, sorter entities.Sorter) (*entities.BasicRoleCollection, error)
 	ListRolesByUser(userID string, pager entities.Pager, sorter entities.Sorter) (*entities.BasicRoleCollection, error)
+	AssertRole(userID, roleName string) (bool, error)
+	AssertPermission(userID, permissionName string) (bool, error)
 }
 
 // RBACInteractorImpl is an actual interactor that implements RBACInteractor
@@ -429,6 +431,41 @@ func (inter *RBACInteractorImpl) ListRolesByUser(userID string, pager entities.P
 		c.Roles = append(c.Roles, *roleToEntity(&r))
 	}
 	return c, nil
+}
+
+// AssertRole checks if a given user has given role assigned
+func (inter *RBACInteractorImpl) AssertRole(userID, roleName string) (bool, error) {
+	uTbl := inter.DBMap.Dialect.QuotedTableForQuery("", "user")
+	rTbl := inter.DBMap.Dialect.QuotedTableForQuery("", "role")
+	q := fmt.Sprintf(`SELECT COUNT(*) FROM user_role AS ur
+		INNER JOIN %v AS u ON u.user_id = ur.user_id
+		INNER JOIN %v AS r ON r.role_id = ur.role_id
+		WHERE u.object_id=? AND r.name=?
+			AND u.is_enabled=1 AND r.is_enabled=1;`, uTbl, rTbl)
+	total, err := inter.DBMap.SelectInt(q, userID, roleName)
+	if err != nil {
+		return false, errs.NewUseCaseError(errs.ErrorTypeOperational, "Failed to assert role", err)
+	}
+	return total > 0, nil
+}
+
+// AssertPermission checks if a given user has a given permission via any of the assigned roles
+func (inter *RBACInteractorImpl) AssertPermission(userID, permissionName string) (bool, error) {
+	uTbl := inter.DBMap.Dialect.QuotedTableForQuery("", "user")
+	rTbl := inter.DBMap.Dialect.QuotedTableForQuery("", "role")
+	pTbl := inter.DBMap.Dialect.QuotedTableForQuery("", "permission")
+	q := fmt.Sprintf(`SELECT COUNT(*) FROM user_role AS ur
+		INNER JOIN %v AS u ON u.user_id = ur.user_id
+		INNER JOIN %v AS r ON r.role_id = ur.role_id
+		INNER JOIN role_permission AS rp ON rp.role_id = r.role_id
+		INNER JOIN %v AS p ON p.permission_id = rp.permission_id
+		WHERE u.object_id=? AND p.name=?
+			AND u.is_enabled=1 AND r.is_enabled=1 AND p.is_enabled=1;`, uTbl, rTbl, pTbl)
+	total, err := inter.DBMap.SelectInt(q, userID, permissionName)
+	if err != nil {
+		return false, errs.NewUseCaseError(errs.ErrorTypeOperational, "Failed to assert permission", err)
+	}
+	return total > 0, nil
 }
 
 func permissionToEntity(p *db.Permission) *entities.BasicPermission {

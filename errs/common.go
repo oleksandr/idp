@@ -22,8 +22,10 @@ const (
 	ErrorTypeNotFound ErrorType = "NOT FOUND"
 	// ErrorTypeConflict represents constrains violations / duplication cases
 	ErrorTypeConflict ErrorType = "CONFLICT"
-	// ErrorTypeForbidden represents constrains violations / duplication cases
+	// ErrorTypeForbidden represents access denied error
 	ErrorTypeForbidden ErrorType = "FORBIDDEN"
+	// ErrorTypeUnauthorized represents errro when accessing protected resource without the proper rights
+	ErrorTypeUnauthorized ErrorType = "UNAUTHORIZED"
 	// ErrorTypeOperational is usually an internal server error (unexpected)
 	ErrorTypeOperational ErrorType = "OPERATIONAL"
 )

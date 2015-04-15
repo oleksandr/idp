@@ -14,7 +14,8 @@ import (
 func startRPCServer(exitCh chan bool,
 	domainInteractor usecases.DomainInteractor,
 	userInteractor usecases.UserInteractor,
-	sessionInteractor usecases.SessionInteractor) {
+	sessionInteractor usecases.SessionInteractor,
+	rbacInteractor usecases.RBACInteractor) {
 
 	addr := os.Getenv(config.EnvIDPRPCAddr)
 	if addr == "" {
@@ -30,12 +31,13 @@ func startRPCServer(exitCh chan bool,
 		return
 	}
 
-	handler := rpc.NewAuthenticatorHandler()
+	handler := rpc.NewIdentityProviderHandler()
 	handler.DomainInteractor = domainInteractor
 	handler.UserInteractor = userInteractor
 	handler.SessionInteractor = sessionInteractor
+	handler.RBACInteractor = rbacInteractor
 
-	processor := services.NewAuthenticatorProcessor(handler)
+	processor := services.NewIdentityProviderProcessor(handler)
 
 	server := thrift.NewTSimpleServer4(processor, transport, transportFactory, protocolFactory)
 	log.Println("RPC API Server listening", addr)

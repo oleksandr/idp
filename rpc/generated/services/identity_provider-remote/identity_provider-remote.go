@@ -25,6 +25,8 @@ func Usage() {
 	fmt.Fprintln(os.Stderr, "  Session getSession(string sessionID, string userAgent, string remoteAddr)")
 	fmt.Fprintln(os.Stderr, "  bool checkSession(string sessionID, string userAgent, string remoteAddr)")
 	fmt.Fprintln(os.Stderr, "  bool deleteSession(string sessionID, string userAgent, string remoteAddr)")
+	fmt.Fprintln(os.Stderr, "  bool assertRole(string sessionID, string roleName)")
+	fmt.Fprintln(os.Stderr, "  bool assertPermission(string sessionID, string permissioName)")
 	fmt.Fprintln(os.Stderr)
 	os.Exit(0)
 }
@@ -112,7 +114,7 @@ func main() {
 		Usage()
 		os.Exit(1)
 	}
-	client := services.NewAuthenticatorClientFactory(trans, protocolFactory)
+	client := services.NewIdentityProviderClientFactory(trans, protocolFactory)
 	if err := trans.Open(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error opening socket to ", host, ":", port, " ", err)
 		os.Exit(1)
@@ -164,8 +166,6 @@ func main() {
 		value2 := argvalue2
 		fmt.Print(client.CheckSession(value0, value1, value2))
 		fmt.Print("\n")
-		fmt.Print(client.CheckSession(value0, value1, value2))
-		fmt.Print("\n")
 		break
 	case "deleteSession":
 		if flag.NArg()-1 != 3 {
@@ -179,6 +179,30 @@ func main() {
 		argvalue2 := flag.Arg(3)
 		value2 := argvalue2
 		fmt.Print(client.DeleteSession(value0, value1, value2))
+		fmt.Print("\n")
+		break
+	case "assertRole":
+		if flag.NArg()-1 != 2 {
+			fmt.Fprintln(os.Stderr, "AssertRole requires 2 args")
+			flag.Usage()
+		}
+		argvalue0 := flag.Arg(1)
+		value0 := argvalue0
+		argvalue1 := flag.Arg(2)
+		value1 := argvalue1
+		fmt.Print(client.AssertRole(value0, value1))
+		fmt.Print("\n")
+		break
+	case "assertPermission":
+		if flag.NArg()-1 != 2 {
+			fmt.Fprintln(os.Stderr, "AssertPermission requires 2 args")
+			flag.Usage()
+		}
+		argvalue0 := flag.Arg(1)
+		value0 := argvalue0
+		argvalue1 := flag.Arg(2)
+		value1 := argvalue1
+		fmt.Print(client.AssertPermission(value0, value1))
 		fmt.Print("\n")
 		break
 	case "":

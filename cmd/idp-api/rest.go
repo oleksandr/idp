@@ -19,17 +19,17 @@ import (
 func startRESTfulServer(exitCh chan bool,
 	domainInteractor usecases.DomainInteractor,
 	userInteractor usecases.UserInteractor,
-	sessionInteractor usecases.SessionInteractor) {
+	sessionInteractor usecases.SessionInteractor,
+	rbacInteractor usecases.RBACInteractor) {
 
 	// Web handlers
-	//domainHandler := new(web.DomainWebHandler)
-	//domainHandler.DomainInteractor = domainInteractor
-	//userHandler := new(web.UserWebHandler)
-	//userHandler.UserInteractor = userInteractor
 	sessionHandler := web.NewSessionWebHandler()
 	sessionHandler.SessionInteractor = sessionInteractor
 	sessionHandler.UserInteractor = userInteractor
 	sessionHandler.DomainInteractor = domainInteractor
+
+	rbacHandler := web.NewRBACWebHandler()
+	rbacHandler.RBACInteractor = rbacInteractor
 
 	//
 	// Middleware chain (mind the order!)
@@ -81,6 +81,10 @@ func startRESTfulServer(exitCh chan bool,
 	router.head(versionedRoute("/sessions/current"), protectedChain.ThenFunc(sessionHandler.Check))
 	router.get(versionedRoute("/sessions/current"), protectedChain.ThenFunc(sessionHandler.Retrieve))
 	router.delete(versionedRoute("/sessions/current"), protectedChain.ThenFunc(sessionHandler.Delete))
+
+	// RBAC API
+	router.head(versionedRoute("/assert/role/:role"), protectedChain.ThenFunc(rbacHandler.AssertRole))
+	router.head(versionedRoute("/assert/permission/:permission"), protectedChain.ThenFunc(rbacHandler.AssertPermission))
 
 	// Utilities
 	router.get("/", publicChain.ThenFunc(web.IndexHandler))

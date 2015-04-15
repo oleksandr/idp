@@ -40,6 +40,8 @@ func main() {
 	userInteractor.DBMap = dbmap
 	sessionInteractor := new(usecases.SessionInteractorImpl)
 	sessionInteractor.DBMap = dbmap
+	rbacInteractor := new(usecases.RBACInteractorImpl)
+	rbacInteractor.DBMap = dbmap
 
 	//
 	// Start the servers and GC
@@ -48,11 +50,13 @@ func main() {
 	go startRESTfulServer(exitCh,
 		domainInteractor,
 		userInteractor,
-		sessionInteractor)
+		sessionInteractor,
+		rbacInteractor)
 	go startRPCServer(exitCh,
 		domainInteractor,
 		userInteractor,
-		sessionInteractor)
+		sessionInteractor,
+		rbacInteractor)
 	go func() {
 		for {
 			select {

@@ -62,7 +62,9 @@ You can see example of configuration in the included `env.sh` file.
 
 ## RESTful API
 
-For the moment the following resources and methods are available:
+For the moment the following resources and methods are available.
+
+### Sessions
 
  * POST /v1/sessions
  * GET /v1/sessions/current
@@ -82,6 +84,11 @@ Creating a session requires posting the following structure:
         }
       }
     }
+
+### RBAC
+
+ * HEAD /assert/role/<role name>
+ * HEAD /assert/permission/<permission name> 
 
 As alternative you can use `session.domain.id` instead of a domain's name.
 

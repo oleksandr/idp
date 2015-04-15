@@ -7,6 +7,13 @@ import (
 
 func errorToServiceError(err *errs.Error) error {
 	switch err.Type {
+	case errs.ErrorTypeUnauthorized:
+		e := services.NewUnauthorizedError()
+		e.Msg = err.Msg
+		if err.Cause != nil {
+			e.Cause = err.Cause.Error()
+		}
+		return e
 	case errs.ErrorTypeForbidden:
 		e := services.NewForbiddenError()
 		e.Msg = err.Msg

@@ -77,7 +77,7 @@ func (inter *SessionInteractorImpl) create(domain entities.BasicDomain, user ent
 	if checkPwd {
 		basicUser := userToEntity(u)
 		if !basicUser.IsPassword(password) {
-			return nil, errs.NewUseCaseError(errs.ErrorTypeForbidden, "Invalid passowrd", nil)
+			return nil, errs.NewUseCaseError(errs.ErrorTypeUnauthorized, "Invalid password", nil)
 		}
 	}
 

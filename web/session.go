@@ -114,5 +114,5 @@ func (handler *SessionWebHandler) Delete(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, errorToHTTPStatus(e), "Failed to delete session", e)
 		return
 	}
-	w.WriteHeader(http.StatusForbidden)
+	w.WriteHeader(http.StatusUnauthorized)
 }
