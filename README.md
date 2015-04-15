@@ -87,8 +87,8 @@ Creating a session requires posting the following structure:
 
 ### RBAC
 
- * HEAD /assert/role/<role name>
- * HEAD /assert/permission/<permission name> 
+ * HEAD /assert/role/`rolename`
+ * HEAD /assert/permission/`permissionname`
 
 As alternative you can use `session.domain.id` instead of a domain's name.
 
