@@ -100,7 +100,7 @@ func OrderByClause(sorter entities.Sorter, alias string) string {
 		if sorter.Asc {
 			clause = fmt.Sprintf("ORDER BY %v%v ASC", prefix, sorter.Field)
 		} else {
-			clause = fmt.Sprintf("ORDER BY %v%v ASC", prefix, sorter.Field)
+			clause = fmt.Sprintf("ORDER BY %v%v DESC", prefix, sorter.Field)
 		}
 	}
 	return clause
